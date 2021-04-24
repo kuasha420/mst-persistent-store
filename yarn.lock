@@ -1327,14 +1327,6 @@ ms@2.1.2:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.2.tgz#d09d1f357b443f493382a8eb3ccd183872ae6009"
   integrity sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==
 
-"mst-persistent-store@file:.yalc/mst-persistent-store":
-  version "1.0.0"
-  dependencies:
-    localforage "1.9.0"
-    mobx-devtools-mst "0.9.30"
-    type-fest "1.0.2"
-    use-async-effect "2.2.3"
-
 natural-compare@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/natural-compare/-/natural-compare-1.4.0.tgz#4abebfeed7541f2c27acfb29bdbbd15c8d5ba4f7"

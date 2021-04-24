@@ -31,7 +31,7 @@ export interface PersistentStoreOptions {
   devtool: boolean;
 }
 
-const isDev = process?.env?.NODE_ENV === 'development' ? true : false;
+const isDev = process && process.env && process.env.NODE_ENV === 'development' ? true : false;
 
 const defaultOptions: PersistentStoreOptions = {
   storageKey: 'persistentStore',
