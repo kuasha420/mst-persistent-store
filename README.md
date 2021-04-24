@@ -83,7 +83,7 @@ Wrap your app with the created Provider component.
 import { PersistentStoreProvider } from './store-setup';
 import Main from './main';
 
-export default function App({ Component, pageProps }: AppProps) {
+export default function App() {
   return (
     <PersistentStoreProvider>
       <Main />
@@ -98,7 +98,7 @@ Consume store values using the hook.
 
 ```tsx
 // main.tsx
-import { observer } from 'mobx-react';
+import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { usePersistentStore } from './store-setup';
 
@@ -110,7 +110,7 @@ const Main = observer(() => {
   }, []);
 
   if (!hydrated) {
-    return null;
+    return <p>Loading...</p>;
   }
 
   return (
