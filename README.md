@@ -1,10 +1,10 @@
-# Use State Promise
+# Mobx State Tree Persistent Store
 
 [![Star IT Ltd](https://staritltd.com/wp-content/uploads/2019/10/Web_Logo_of_Star_IT_158x80.png)](https://staritltd.com)
 
 A factory to easily create Persistent Mobx State Tree Store Provider and consumer hook.
 
-- [Use State Promise](#use-state-promise)
+- [Mobx State Tree Persistent Store](#mobx-state-tree-persistent-store)
   - [Installation](#installation)
   - [Usage](#usage)
     - [Create Provider and Hooks](#create-provider-and-hooks)
