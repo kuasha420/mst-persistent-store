@@ -1,10 +1,10 @@
-import localforage from 'localforage';
 import { applySnapshot, IAnyModelType, Instance, onSnapshot, SnapshotIn } from 'mobx-state-tree';
 import React, { createContext, useContext, useRef } from 'react';
 import { PartialDeep } from 'type-fest';
 import useAsyncEffect from 'use-async-effect';
 import { debounce } from './utils/debounce';
 import merge from './utils/merge';
+import { getItem, removeItem, setItem } from './utils/storage';
 
 export interface PersistentStoreOptions {
   /**
@@ -69,7 +69,7 @@ const createPersistentStore = <T extends IAnyModelType>(
     // Effects will only run on client side.
     useAsyncEffect(
       async (isMounted) => {
-        const data = await localforage.getItem<any>(storageKey);
+        const data = await getItem<any>(storageKey);
         if (data && isMounted()) {
           try {
             logging && console.log('Hydrating Store from Storage');
@@ -78,7 +78,7 @@ const createPersistentStore = <T extends IAnyModelType>(
           } catch (error) {
             console.error(error);
             logging && console.log('Failed to hydrate store. Throwing away data from stogare.');
-            await localforage.removeItem(storageKey);
+            await removeItem(storageKey);
           }
         }
 
@@ -95,7 +95,7 @@ const createPersistentStore = <T extends IAnyModelType>(
         const saveSnapshot = debounce((snapshot) => {
           logging && console.log('Saving Snapshot to Storage');
 
-          localforage.setItem(storageKey, snapshot);
+          setItem(storageKey, snapshot);
         }, writeDelay);
 
         return onSnapshot(mstStore.current, (snapshot) => {
