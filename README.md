@@ -6,6 +6,8 @@ A factory to easily create Persistent Mobx State Tree Store Provider and consume
 
 - [Mobx State Tree Persistent Store](#mobx-state-tree-persistent-store)
   - [Installation](#installation)
+    - [For React](#for-react)
+    - [For React Native](#for-react-native)
   - [Usage](#usage)
     - [Create Provider and Hooks](#create-provider-and-hooks)
     - [Add Provider to The Root Component](#add-provider-to-the-root-component)
@@ -16,6 +18,7 @@ A factory to easily create Persistent Mobx State Tree Store Provider and consume
       - [Arguments](#arguments)
       - [PersistentStoreOptions](#persistentstoreoptions)
   - [License](#license)
+  - [Contribution](#contribution)
 
 ## Installation
 
@@ -23,7 +26,13 @@ A factory to easily create Persistent Mobx State Tree Store Provider and consume
 
 Install the peerDependencies if you haven't already.
 
-`yarn add mobx-state-tree react`
+### For React
+
+`yarn add mobx-state-tree localforage`
+
+### For React Native
+
+`yarn add mobx-state-tree @react-native-async-storage/async-storage`
 
 ## Usage
 
@@ -168,4 +177,8 @@ All Properties are optional.
 
 ## License
 
-MIT
+This package is licensed under the MIT License.
+
+## Contribution
+
+Any kind of contribution is welcome. Thanks!
