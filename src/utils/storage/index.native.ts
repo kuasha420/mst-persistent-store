@@ -5,9 +5,7 @@ export const getItem = async <T>(key: string): Promise<T | null> => {
   return item ? JSON.parse(item) : null;
 };
 
-export const setItem = async (key: string, value: any) => {
-  const data = JSON.stringify(value);
-  return AsyncStorage.setItem(key, data);
-};
+export const setItem = (key: string, value: any) =>
+  AsyncStorage.setItem(key, JSON.stringify(value));
 
-export const removeItem = async (key: string) => AsyncStorage.removeItem(key);
+export const removeItem = (key: string) => AsyncStorage.removeItem(key);

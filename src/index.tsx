@@ -1,5 +1,5 @@
 import { applySnapshot, IAnyModelType, Instance, onSnapshot, SnapshotIn } from 'mobx-state-tree';
-import React, { createContext, useContext, useRef } from 'react';
+import React, { createContext, useContext } from 'react';
 import { PartialDeep } from 'type-fest';
 import useAsyncEffect from 'use-async-effect';
 import { debounce } from './utils/debounce';
@@ -57,15 +57,11 @@ const createPersistentStore = <T extends IAnyModelType>(
     : defaultOptions;
   const initStore = blacklist ? merge(init, blacklist) : init;
 
+  // Store Contest and Value
   const PersistentStoreContext = createContext<Instance<T> | null>(null);
+  const mstStore: Instance<T> = store.create(initStore);
 
   const PersistentStoreProvider: React.FC = ({ children }) => {
-    // The store instance that will be passed down the context tree.
-    // We keep this in a ref to avoid unnecessary rerenders.
-    // We could have exported the context or stored it as a global
-    // variable but that is a testing nightare and not recommended.
-    const mstStore = useRef<Instance<T>>(store.create(initStore));
-
     // Effects will only run on client side.
     useAsyncEffect(
       async (isMounted) => {
@@ -73,7 +69,7 @@ const createPersistentStore = <T extends IAnyModelType>(
         if (data && isMounted()) {
           try {
             logging && console.log('Hydrating Store from Storage');
-            applySnapshot(mstStore.current, merge(data, blacklist));
+            applySnapshot(mstStore, merge(data, blacklist));
             logging && console.log('Successfully hydrated store from storage');
           } catch (error) {
             console.error(error);
@@ -86,7 +82,7 @@ const createPersistentStore = <T extends IAnyModelType>(
           try {
             logging && console.log('Dev env detected, trying to enable mobx-devtools-mst');
             const { default: makeInspectable } = await import('mobx-devtools-mst');
-            makeInspectable(mstStore.current);
+            makeInspectable(mstStore);
           } catch (error) {
             console.error(error);
           }
@@ -98,7 +94,7 @@ const createPersistentStore = <T extends IAnyModelType>(
           setItem(storageKey, snapshot);
         }, writeDelay);
 
-        return onSnapshot(mstStore.current, (snapshot) => {
+        return onSnapshot(mstStore, (snapshot) => {
           logging && console.log('New Snapshot Available');
           saveSnapshot(snapshot);
         });
@@ -108,17 +104,13 @@ const createPersistentStore = <T extends IAnyModelType>(
         // disposer can be undefined in some cases, such as-
         // Component getting unmounted before the async effect
         // has finished running, or, it has thrown.
-        if (disposer) {
-          disposer();
-        }
+        disposer?.();
       },
       []
     );
 
     return (
-      <PersistentStoreContext.Provider value={mstStore.current}>
-        {children}
-      </PersistentStoreContext.Provider>
+      <PersistentStoreContext.Provider value={mstStore}>{children}</PersistentStoreContext.Provider>
     );
   };
 
