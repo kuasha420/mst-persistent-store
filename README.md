@@ -159,10 +159,10 @@ const createPersistentStore: <T extends IAnyModelType>(
 
 | param     | type                            | required | description                                        |
 | --------- | ------------------------------- | -------- | -------------------------------------------------- |
-| store     | T extends IAnyModelType         | yes      | the mst model to instantiate                       |
-| init      | SnapshotIn<T>                   | yes      | the init data of the store                         |
-| blacklist | PartialDeep<SnapshotIn<T>>      | no       | the part of the store that should not be persisted |
-| options   | Partial<PersistentStoreOptions> | no       | Various options to change store behavior           |
+| store     | `T extends IAnyModelType`         | yes      | the mst model to instantiate                       |
+| init      | `SnapshotIn<T>`                   | yes      | the init data of the store                         |
+| blacklist | `PartialDeep<SnapshotIn<T>>`      | no       | the part of the store that should not be persisted |
+| options   | `Partial<PersistentStoreOptions>` | no       | Various options to change store behavior           |
 
 #### PersistentStoreOptions
 
