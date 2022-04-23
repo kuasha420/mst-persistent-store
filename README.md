@@ -1,7 +1,5 @@
 # Mobx State Tree Persistent Store
 
-[![Star IT Ltd](https://staritltd.com/wp-content/uploads/2019/10/Web_Logo_of_Star_IT_158x80.png)](https://staritltd.com)
-
 A factory to easily create Persistent Mobx State Tree Store Provider and consumer hook.
 
 - [Mobx State Tree Persistent Store](#mobx-state-tree-persistent-store)
@@ -24,7 +22,7 @@ A factory to easily create Persistent Mobx State Tree Store Provider and consume
 
 `yarn add mst-persistent-store`
 
-Install the peerDependencies if you haven't already.
+Install the Peer Dependencies if you haven't already.
 
 ### For React
 

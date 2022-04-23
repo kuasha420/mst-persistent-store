@@ -6,7 +6,6 @@ type TUnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends 
   ? I
   : never;
 
-// istanbul ignore next
 const isObject = (obj: any) => {
   if (typeof obj === 'object' && obj !== null) {
     if (typeof Object.getPrototypeOf === 'function') {

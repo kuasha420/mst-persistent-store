@@ -1,6 +1,6 @@
 {
   "name": "mst-persistent-store",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Mobx State Tree Persistant Store Provider Component and Consumer Hook writen in TypeScript",
   "main": "dist/index.js",
   "module": "dist/esm/index.js",
@@ -32,29 +32,29 @@
     "prepare": "rm -rf ./dist/* && tsc && tsc -p ./tsconfig.esm.json"
   },
   "devDependencies": {
-    "@react-native-async-storage/async-storage": "1.15.4",
-    "@types/node": "14.14.41",
-    "@types/react": "17.0.3",
-    "@typescript-eslint/eslint-plugin": "4.22.0",
-    "@typescript-eslint/parser": "4.22.0",
+    "@react-native-async-storage/async-storage": "1.17.3",
+    "@types/node": "17.0.25",
+    "@types/react": "18.0.6",
+    "@typescript-eslint/eslint-plugin": "5.20.0",
+    "@typescript-eslint/parser": "5.20.0",
     "babel-eslint": "10.1.0",
-    "eslint": "7.25.0",
-    "eslint-config-react-app": "6.0.0",
-    "eslint-plugin-flowtype": "5.7.2",
-    "eslint-plugin-import": "2.x",
-    "eslint-plugin-jsx-a11y": "6.4.1",
-    "eslint-plugin-react": "7.23.2",
-    "eslint-plugin-react-hooks": "4.2.0",
-    "localforage": "1.9.0",
-    "mobx": "6.3.0",
-    "mobx-state-tree": "5.0.1",
-    "prettier": "2.2.1",
-    "react": "17.0.2",
-    "typescript": "4.2.4"
+    "eslint": "8.14.0",
+    "eslint-config-react-app": "7.0.1",
+    "eslint-plugin-flowtype": "8.0.3",
+    "eslint-plugin-import": "2.26.0",
+    "eslint-plugin-jsx-a11y": "6.5.1",
+    "eslint-plugin-react": "7.29.4",
+    "eslint-plugin-react-hooks": "4.4.0",
+    "localforage": "1.10.0",
+    "mobx": "6.5.0",
+    "mobx-state-tree": "5.1.3",
+    "prettier": "2.6.2",
+    "react": "18.0.0",
+    "typescript": "4.6.3"
   },
   "dependencies": {
     "mobx-devtools-mst": "0.9.30",
-    "type-fest": "1.0.2",
-    "use-async-effect": "2.2.3"
+    "type-fest": "2.12.2",
+    "use-async-effect": "2.2.5"
   }
 }

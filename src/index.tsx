@@ -1,5 +1,5 @@
 import { applySnapshot, IAnyModelType, Instance, onSnapshot, SnapshotIn } from 'mobx-state-tree';
-import React, { createContext, useContext } from 'react';
+import React, { createContext, PropsWithChildren, useContext } from 'react';
 import { PartialDeep } from 'type-fest';
 import useAsyncEffect from 'use-async-effect';
 import { debounce } from './utils/debounce';
@@ -64,7 +64,7 @@ const createPersistentStore = <T extends IAnyModelType>(
   const PersistentStoreContext = createContext<Instance<T> | null>(null);
   const mstStore: Instance<T> = store.create(initStore);
 
-  const PersistentStoreProvider: React.FC = ({ children }) => {
+  const PersistentStoreProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
     // Effects will only run on client side.
     useAsyncEffect(
       async (isMounted) => {
