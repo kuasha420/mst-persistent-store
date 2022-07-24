@@ -1,22 +1,21 @@
-# Mobx State Tree Persistent Store
+# Mobx State Tree Persistent Store <!-- omit in toc -->
 
 A factory to easily create Persistent Mobx State Tree Store Provider and consumer hook.
 
-- [Mobx State Tree Persistent Store](#mobx-state-tree-persistent-store)
-  - [Installation](#installation)
-    - [For React](#for-react)
-    - [For React Native](#for-react-native)
-  - [Usage](#usage)
-    - [Create Provider and Hooks](#create-provider-and-hooks)
-    - [Add Provider to The Root Component](#add-provider-to-the-root-component)
-    - [Use the Store from Child Components](#use-the-store-from-child-components)
-  - [API](#api)
-    - [createPersistentStore](#createpersistentstore)
-      - [Type Definition](#type-definition)
-      - [Arguments](#arguments)
-      - [PersistentStoreOptions](#persistentstoreoptions)
-  - [License](#license)
-  - [Contribution](#contribution)
+- [Installation](#installation)
+  - [For React](#for-react)
+  - [For React Native](#for-react-native)
+- [Usage](#usage)
+  - [Create Provider and Hooks](#create-provider-and-hooks)
+  - [Add Provider to The Root Component](#add-provider-to-the-root-component)
+  - [Use the Store from Child Components](#use-the-store-from-child-components)
+- [API](#api)
+  - [createPersistentStore](#createpersistentstore)
+    - [Type Definition](#type-definition)
+    - [Arguments](#arguments)
+    - [PersistentStoreOptions](#persistentstoreoptions)
+- [License](#license)
+- [Contribution](#contribution)
 
 ## Installation
 
@@ -148,15 +147,15 @@ interface PersistentStoreOptions {
 const createPersistentStore: <T extends IAnyModelType>(
   store: T,
   init: SnapshotIn<T>,
-  blacklist?: PartialDeep<SnapshotIn<T>> | undefined,
-  options?: Partial<PersistentStoreOptions> | undefined
-) => readonly [React.FC<{}>, () => Instance<T>];
+  blacklist?: PartialDeep<SnapshotIn<T>>,
+  options?: Partial<PersistentStoreOptions>
+) => readonly [React.FC, () => Instance<T>];
 ```
 
 #### Arguments
 
-| param     | type                            | required | description                                        |
-| --------- | ------------------------------- | -------- | -------------------------------------------------- |
+| param     | type                              | required | description                                        |
+| --------- | --------------------------------- | -------- | -------------------------------------------------- |
 | store     | `T extends IAnyModelType`         | yes      | the mst model to instantiate                       |
 | init      | `SnapshotIn<T>`                   | yes      | the init data of the store                         |
 | blacklist | `PartialDeep<SnapshotIn<T>>`      | no       | the part of the store that should not be persisted |
