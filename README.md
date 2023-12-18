@@ -9,6 +9,7 @@ A factory to easily create Persistent Mobx State Tree Store Provider and consume
   - [Create Provider and Hooks](#create-provider-and-hooks)
   - [Add Provider to The Root Component](#add-provider-to-the-root-component)
   - [Use the Store from Child Components](#use-the-store-from-child-components)
+- [Custom Storage Backend](#custom-storage-backend)
 - [API](#api)
   - [createPersistentStore](#createpersistentstore)
     - [Type Definition](#type-definition)
@@ -21,7 +22,7 @@ A factory to easily create Persistent Mobx State Tree Store Provider and consume
 
 `yarn add mst-persistent-store`
 
-Install the Peer Dependencies if you haven't already.
+`@react-native-async-storage/async-storage` and `localforage` are optional peer dependencies. You can use any storage you want by passing the storage object to the factory. But if you want to use the default storage, you need to install one of them. See [Usage](#usage) and [Custom Storage Backend](#custom-storage-backend) for more info about how to use default or custom storage.
 
 ### For React
 
@@ -43,6 +44,7 @@ Below is an example on how to create the provider and consumer hook.
 // store-setup.ts
 import { types } from 'mobx-state-tree';
 import createPersistentStore from 'mst-persistent-store';
+import defaultStorage from 'mst-persistent-store/dist/storage';
 
 const PersistentStore = types
   .model('RootStore', {
@@ -64,6 +66,7 @@ const PersistentStore = types
 
 export const [PersistentStoreProvider, usePersistentStore] = createPersistentStore(
   PersistentStore,
+  defaultStorage,
   {
     name: 'Test User',
     age: 19,
@@ -129,6 +132,53 @@ const Main = observer(() => {
 });
 
 export default Main;
+```
+
+## Custom Storage Backend
+
+The above example uses the default storage. You can use any storage you want by passing the storage object to the factory.
+
+Here is an example using `react-native-mmkv` as the storage.
+
+```ts
+import { MMKV } from 'react-native-mmkv';
+
+const mmkv = new MMKV();
+
+const setItem = (key: string, value: any) => mmkv.set(key, JSON.stringify(value));
+
+const getItem = (key: string) => {
+  const value = mmkv.getString(key);
+  if (value) {
+    return JSON.parse(value);
+  }
+  return null;
+};
+
+const removeItem = (key: string) => mmkv.delete(key);
+
+const storage = {
+  setItem,
+  getItem,
+  removeItem,
+};
+
+export const [PersistentStoreProvider, usePersistentStore] = createPersistentStore(
+  PersistentStore,
+  storage,
+  {
+    name: 'Test User',
+    age: 19,
+    premium: false,
+    hydrated: false,
+  },
+  {
+    hydrated: false,
+  },
+  {
+    hydrated: false,
+  }
+);
 ```
 
 ## API
