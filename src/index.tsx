@@ -8,8 +8,8 @@ import { getItem, removeItem, setItem } from './utils/storage';
 
 export interface StorageOptions {
   setItem: (key: string, value: any) => Promise<void> | void;
-  getItem: (key: string) => Promise<any> | any | null;
-  removeItem: (key: string) => Promise<void>;
+  getItem: (key: string) => Promise<any | null> | any | null;
+  removeItem: (key: string) => Promise<void> | void;
 }
 
 export interface PersistentStoreOptions {
@@ -43,7 +43,7 @@ export interface PersistentStoreOptions {
    * localforage. ie. `setItem` must stringify the data before storing and `getItem` must
    * parse the data before returning.
    */
-  storage?: StorageOptions;
+  storage: StorageOptions;
 }
 
 const isDev =
@@ -77,7 +77,7 @@ const createPersistentStore = <T extends IAnyModelType>(
   /** Various options to change store behavior. */
   options?: Partial<PersistentStoreOptions>
 ) => {
-  const { storageKey, writeDelay, devtool, logging } = options
+  const { storageKey, writeDelay, devtool, logging, storage } = options
     ? merge(defaultOptions, options)
     : defaultOptions;
   const initStore = blacklist ? merge(init, blacklist) : init;
@@ -90,7 +90,7 @@ const createPersistentStore = <T extends IAnyModelType>(
     // Effects will only run on client side.
     useAsyncEffect(
       async (isMounted) => {
-        const data = await getItem<any>(storageKey);
+        const data = await storage.getItem(storageKey);
         if (data && isMounted()) {
           try {
             logging && console.log('Hydrating Store from Storage');
@@ -99,7 +99,7 @@ const createPersistentStore = <T extends IAnyModelType>(
           } catch (error) {
             console.error(error);
             logging && console.log('Failed to hydrate store. Throwing away data from storage.');
-            await removeItem(storageKey);
+            await storage.removeItem(storageKey);
           }
         }
 
@@ -116,7 +116,7 @@ const createPersistentStore = <T extends IAnyModelType>(
         const saveSnapshot = debounce((snapshot) => {
           logging && console.log('Saving Snapshot to Storage');
 
-          setItem(storageKey, snapshot);
+          storage.setItem(storageKey, snapshot);
         }, writeDelay);
 
         return onSnapshot(mstStore, (snapshot) => {

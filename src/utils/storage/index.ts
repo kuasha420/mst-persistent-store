@@ -1,6 +1,6 @@
 import localforage from 'localforage';
 
-export const getItem = <T>(key: string) => localforage.getItem<T>(key);
+export const getItem = (key: string) => localforage.getItem(key);
 
 export const setItem = (key: string, value: any) => localforage.setItem(key, value);
 

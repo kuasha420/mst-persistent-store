@@ -138,10 +138,10 @@ export default Main;
 #### Type Definition
 
 ```ts
-interface StorageOptions {
+export interface StorageOptions {
   setItem: (key: string, value: any) => Promise<void> | void;
-  getItem: (key: string) => Promise<any> | any | null;
-  removeItem: (key: string) => Promise<void>;
+  getItem: (key: string) => Promise<any | null> | any | null;
+  removeItem: (key: string) => Promise<void> | void;
 }
 
 interface PersistentStoreOptions {
