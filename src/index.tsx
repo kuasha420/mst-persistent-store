@@ -6,6 +6,12 @@ import { debounce } from './utils/debounce';
 import merge from './utils/merge';
 import { getItem, removeItem, setItem } from './utils/storage';
 
+export interface StorageOptions {
+  setItem: (key: string, value: any) => Promise<void> | void;
+  getItem: (key: string) => Promise<any> | any | null;
+  removeItem: (key: string) => Promise<void>;
+}
+
 export interface PersistentStoreOptions {
   /**
    * the key to use as the localforage key. default is 'persistentStore'.
@@ -29,6 +35,15 @@ export interface PersistentStoreOptions {
    * enabled on development mode only.
    */
   devtool: boolean;
+  /**
+   * Custom Storage Provider. By default, it uses `@react-native-async-storage/async-storage`
+   * for react-native and `localforage` for web. You can use any storage provider that
+   * implements the same API. ie. `setItem`, `getItem`, `removeItem`. Note that both `setItem`
+   * and `getItem` must handle the serialization and deserialization of data as done by
+   * localforage. ie. `setItem` must stringify the data before storing and `getItem` must
+   * parse the data before returning.
+   */
+  storage?: StorageOptions;
 }
 
 const isDev =
@@ -36,11 +51,18 @@ const isDev =
     ? true
     : false;
 
+const defaultStorage: StorageOptions = {
+  setItem,
+  getItem,
+  removeItem,
+};
+
 const defaultOptions: PersistentStoreOptions = {
   storageKey: 'persistentStore',
   writeDelay: 1500,
   logging: isDev,
   devtool: isDev,
+  storage: defaultStorage,
 };
 
 const createPersistentStore = <T extends IAnyModelType>(
@@ -76,7 +98,7 @@ const createPersistentStore = <T extends IAnyModelType>(
             logging && console.log('Successfully hydrated store from storage');
           } catch (error) {
             console.error(error);
-            logging && console.log('Failed to hydrate store. Throwing away data from stogare.');
+            logging && console.log('Failed to hydrate store. Throwing away data from storage.');
             await removeItem(storageKey);
           }
         }
