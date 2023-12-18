@@ -1,6 +1,6 @@
 {
   "name": "mst-persistent-store",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Mobx State Tree Persistant Store Provider Component and Consumer Hook writen in TypeScript",
   "main": "dist/index.js",
   "module": "dist/esm/index.js",
