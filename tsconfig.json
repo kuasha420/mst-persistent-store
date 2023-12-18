@@ -1,9 +1,23 @@
 {
-  "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
+    "lib": ["es6", "dom", "esnext.asynciterable"],
+    "sourceMap": true,
+    "allowJs": true,
+    "jsx": "react",
+    "moduleResolution": "node",
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "rootDir": "src",
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
     "outDir": "dist",
-    "module": "commonjs",
-    "target": "es2015",
-    "declarationDir": "dist"
-  }
+    "module": "es2020",
+    "target": "ES2017",
+  },
+  "exclude": ["node_modules", "dist"]
 }

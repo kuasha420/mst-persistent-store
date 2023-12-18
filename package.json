@@ -3,8 +3,6 @@
   "version": "2.1.1",
   "description": "Mobx State Tree Persistant Store Provider Component and Consumer Hook writen in TypeScript",
   "main": "dist/index.js",
-  "module": "dist/esm/index.js",
-  "react-native": "dist/esm/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "/dist",
@@ -28,8 +26,16 @@
     "mobx-state-tree": ">=5",
     "react": ">=18.2"
   },
+  "peerDependenciesMeta": {
+    "@react-native-async-storage/async-storage": {
+      "optional": true
+    },
+    "localforage": {
+      "optional": true
+    }
+  },
   "scripts": {
-    "prepare": "rm -rf ./dist/* && tsc && tsc -p ./tsconfig.esm.json"
+    "prepare": "rm -rf ./dist/* && tsc"
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "7.21.11",

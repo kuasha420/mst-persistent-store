@@ -4,7 +4,6 @@ import { PartialDeep } from 'type-fest';
 import useAsyncEffect from 'use-async-effect';
 import { debounce } from './utils/debounce';
 import merge from './utils/merge';
-import { getItem, removeItem, setItem } from './utils/storage';
 
 export interface StorageOptions {
   setItem: (key: string, value: any) => Promise<void> | void;
@@ -35,15 +34,6 @@ export interface PersistentStoreOptions {
    * enabled on development mode only.
    */
   devtool: boolean;
-  /**
-   * Custom Storage Provider. By default, it uses `@react-native-async-storage/async-storage`
-   * for react-native and `localforage` for web. You can use any storage provider that
-   * implements the same API. ie. `setItem`, `getItem`, `removeItem`. Note that both `setItem`
-   * and `getItem` must handle the serialization and deserialization of data as done by
-   * localforage. ie. `setItem` must stringify the data before storing and `getItem` must
-   * parse the data before returning.
-   */
-  storage: StorageOptions;
 }
 
 const isDev =
@@ -51,18 +41,11 @@ const isDev =
     ? true
     : false;
 
-const defaultStorage: StorageOptions = {
-  setItem,
-  getItem,
-  removeItem,
-};
-
 const defaultOptions: PersistentStoreOptions = {
   storageKey: 'persistentStore',
   writeDelay: 1500,
   logging: isDev,
   devtool: isDev,
-  storage: defaultStorage,
 };
 
 const createPersistentStore = <T extends IAnyModelType>(
@@ -70,6 +53,30 @@ const createPersistentStore = <T extends IAnyModelType>(
    * The MST Root Store Model
    */
   store: T,
+  /**
+   * Storage Provider. To use default storage provider, import `defaultStorage` from `mst-persistent-store/storage` and
+   * pass it here. The default storage uses `@react-native-async-storage/async-storage` for react-native and `localforage`
+   * for web.
+   *
+   * You can use any storage provider that mplements the same API. ie. `setItem`, `getItem`, `removeItem`.
+   *
+   * Note that both `setItem` and `getItem` must handle the serialization and deserialization of data as done by
+   * localforage. ie. `setItem` must stringify the data before storing and `getItem` must parse the data before returning.
+   *
+   * @example
+   *
+   * ```ts
+   * import createPersistentStore from 'mst-persistent-store';
+   * import defaultStorage from 'mst-persistent-store/dist/storage';
+   *
+   * const [PersistentStoreProvider, usePersistentStore] = createPersistentStore(
+   *  RootStore,
+   * init,
+   * defaultStorage
+   * );
+   * ```
+   */
+  storage: StorageOptions,
   /** Initial Store Value */
   init: SnapshotIn<T>,
   /** Part of the store that will not be persisted. */
@@ -77,7 +84,7 @@ const createPersistentStore = <T extends IAnyModelType>(
   /** Various options to change store behavior. */
   options?: Partial<PersistentStoreOptions>
 ) => {
-  const { storageKey, writeDelay, devtool, logging, storage } = options
+  const { storageKey, writeDelay, devtool, logging } = options
     ? merge(defaultOptions, options)
     : defaultOptions;
   const initStore = blacklist ? merge(init, blacklist) : init;

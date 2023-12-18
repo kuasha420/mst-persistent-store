@@ -149,10 +149,10 @@ interface PersistentStoreOptions {
   writeDelay: number;
   logging: boolean;
   devtool: boolean;
-  storage: StorageOptions;
 }
 const createPersistentStore: <T extends IAnyModelType>(
   store: T,
+  storage: StorageOptions,
   init: SnapshotIn<T>,
   blacklist?: PartialDeep<SnapshotIn<T>>,
   options?: Partial<PersistentStoreOptions>
@@ -161,24 +161,24 @@ const createPersistentStore: <T extends IAnyModelType>(
 
 #### Arguments
 
-| param     | type                              | required | description                                        |
-| --------- | --------------------------------- | -------- | -------------------------------------------------- |
-| store     | `T extends IAnyModelType`         | yes      | the mst model to instantiate                       |
-| init      | `SnapshotIn<T>`                   | yes      | the init data of the store                         |
-| blacklist | `PartialDeep<SnapshotIn<T>>`      | no       | the part of the store that should not be persisted |
-| options   | `Partial<PersistentStoreOptions>` | no       | Various options to change store behavior           |
+| param     | type                              | required | description                                                                                                                                                                                               |
+| --------- | --------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| store     | `T extends IAnyModelType`         | yes      | the mst model to instantiate                                                                                                                                                                              |
+| storage   | `StorageOptions`                  | yes      | the storage to use. Use `defaultStorage` from `mst-persistent-store/storage` to use the `@react-native-async-storage/async-storage` (for React Native) or `localforage` (for Web) backed default storage. |
+| init      | `SnapshotIn<T>`                   | yes      | the init data of the store                                                                                                                                                                                |
+| blacklist | `PartialDeep<SnapshotIn<T>>`      | no       | the part of the store that should not be persisted                                                                                                                                                        |
+| options   | `Partial<PersistentStoreOptions>` | no       | Various options to change store behavior                                                                                                                                                                  |
 
 #### PersistentStoreOptions
 
 All Properties are optional.
 
-| property   | type             | default                      | description                                                                                                                                                                     |
-| ---------- | ---------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| storageKey | `string`         | persistentStore              | the key to use as the localforage key. Must be <br>changed when using multiple stores in the same<br>app to avoid overriding data.                                              |
-| writeDelay | `number`         | 1500                         | On Repeated Store Update, it's advisable to wait<br>a certain time before updating the persistent <br>storage with new snapshot. This value controls the<br>debounce delay.     |
-| logging    | `boolean`        | true is dev<br>false in prod | Whether to enable logging.                                                                                                                                                      |
-| devtool    | `boolean`        | true in dev<br>false in prod | Whether to integrate with mobx-devtool                                                                                                                                          |
-| storage    | `StorageOptions` | localforage//AsyncStorage    | The storage to use. By default, it uses `@react-native-async-storage/async-storage` in React Native and `localforage` in web. See inline docs for how to use different storage. |
+| property   | type      | default                      | description                                                                                                                                                                 |
+| ---------- | --------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| storageKey | `string`  | persistentStore              | the key to use as the localforage key. Must be <br>changed when using multiple stores in the same<br>app to avoid overriding data.                                          |
+| writeDelay | `number`  | 1500                         | On Repeated Store Update, it's advisable to wait<br>a certain time before updating the persistent <br>storage with new snapshot. This value controls the<br>debounce delay. |
+| logging    | `boolean` | true is dev<br>false in prod | Whether to enable logging.                                                                                                                                                  |
+| devtool    | `boolean` | true in dev<br>false in prod | Whether to integrate with mobx-devtool                                                                                                                                      |
 
 ## License
 
