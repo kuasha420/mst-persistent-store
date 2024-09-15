@@ -1,10 +1,10 @@
 import { applySnapshot, IAnyModelType, Instance, onSnapshot, SnapshotIn } from 'mobx-state-tree';
 import React, { createContext, PropsWithChildren, useContext } from 'react';
-import { PartialDeep } from 'type-fest';
 import useAsyncEffect from 'use-async-effect';
 import { debounce } from './utils/debounce';
 import createLogger from './utils/create-logger';
 import recursiveObjectSpread from './utils/recursive-object-spread';
+import { PartialDeep } from './types/partial-deep';
 
 export interface StorageOptions {
   setItem: (key: string, value: any) => Promise<void> | void;

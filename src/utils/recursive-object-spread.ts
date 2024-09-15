@@ -1,6 +1,4 @@
-type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
-};
+import { PartialDeep } from '../types/partial-deep';
 
 const isObject = (obj: any) => {
   if (typeof obj === 'object' && obj !== null) {
@@ -17,7 +15,7 @@ const isObject = (obj: any) => {
 
 export default function recursiveObjectSpread<T extends Record<string, any>>(
   original: T,
-  overrides?: DeepPartial<T>,
+  overrides?: PartialDeep<T>
 ): T {
   if (!overrides) {
     return original;
@@ -25,7 +23,7 @@ export default function recursiveObjectSpread<T extends Record<string, any>>(
 
   const result = { ...original };
 
-  Object.keys(overrides).forEach(key => {
+  Object.keys(overrides).forEach((key) => {
     const originalValue = original[key];
     const overrideValue = overrides[key];
 
