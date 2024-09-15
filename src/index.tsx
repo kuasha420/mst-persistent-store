@@ -3,7 +3,8 @@ import React, { createContext, PropsWithChildren, useContext } from 'react';
 import { PartialDeep } from 'type-fest';
 import useAsyncEffect from 'use-async-effect';
 import { debounce } from './utils/debounce';
-import merge from './utils/merge';
+import createLogger from './utils/create-logger';
+import recursiveObjectSpread from './utils/recursive-object-spread';
 
 export interface StorageOptions {
   setItem: (key: string, value: any) => Promise<void> | void;
@@ -80,14 +81,16 @@ const createPersistentStore = <T extends IAnyModelType>(
   /** Initial Store Value */
   init: SnapshotIn<T>,
   /** Part of the store that will not be persisted. */
-  blacklist?: PartialDeep<SnapshotIn<T>>,
+  disallowList?: PartialDeep<SnapshotIn<T>>,
   /** Various options to change store behavior. */
   options?: Partial<PersistentStoreOptions>
 ) => {
   const { storageKey, writeDelay, devtool, logging } = options
-    ? merge(defaultOptions, options)
+    ? { ...defaultOptions, ...options }
     : defaultOptions;
-  const initStore = blacklist ? merge(init, blacklist) : init;
+  const initStore = disallowList ? recursiveObjectSpread(init, disallowList) : init;
+
+  const logger = createLogger(logging);
 
   // Store Contest and Value
   const PersistentStoreContext = createContext<Instance<T> | null>(null);
@@ -100,19 +103,19 @@ const createPersistentStore = <T extends IAnyModelType>(
         const data = await storage.getItem(storageKey);
         if (data && isMounted()) {
           try {
-            logging && console.log('Hydrating Store from Storage');
-            applySnapshot(mstStore, merge(data, blacklist));
-            logging && console.log('Successfully hydrated store from storage');
+            logger('Hydrating Store from Storage');
+            applySnapshot(mstStore, recursiveObjectSpread(data, disallowList));
+            logger('Successfully hydrated store from storage');
           } catch (error) {
             console.error(error);
-            logging && console.log('Failed to hydrate store. Throwing away data from storage.');
+            logger('Failed to hydrate store. Throwing away data from storage.');
             await storage.removeItem(storageKey);
           }
         }
 
         if (devtool) {
           try {
-            logging && console.log('Dev env detected, trying to enable mobx-devtools-mst');
+            logger('Dev env detected, trying to enable mobx-devtools-mst');
             const { default: makeInspectable } = await import('mobx-devtools-mst');
             makeInspectable(mstStore);
           } catch (error) {
@@ -121,18 +124,18 @@ const createPersistentStore = <T extends IAnyModelType>(
         }
 
         const saveSnapshot = debounce((snapshot) => {
-          logging && console.log('Saving Snapshot to Storage');
+          logger('Saving Snapshot to Storage');
 
           storage.setItem(storageKey, snapshot);
         }, writeDelay);
 
         return onSnapshot(mstStore, (snapshot) => {
-          logging && console.log('New Snapshot Available');
+          logger('New Snapshot Available');
           saveSnapshot(snapshot);
         });
       },
       (disposer) => {
-        logging && console.log('PersistentStoreProvider is getting unmounted.');
+        logger('PersistentStoreProvider is getting unmounted.');
         // disposer can be undefined in some cases, such as-
         // Component getting unmounted before the async effect
         // has finished running, or, it has thrown.
@@ -147,11 +150,11 @@ const createPersistentStore = <T extends IAnyModelType>(
   };
 
   const usePersistentStore = () => {
-    const store = useContext(PersistentStoreContext);
-    if (!store) {
+    const persistentStore = useContext(PersistentStoreContext);
+    if (!persistentStore) {
       throw new Error('usePersistentStore must be used within a PersistentStoreProvider.');
     }
-    return store;
+    return persistentStore;
   };
 
   return [PersistentStoreProvider, usePersistentStore] as const;

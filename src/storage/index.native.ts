@@ -5,7 +5,8 @@ const getItem = async (key: string) => {
   return item ? JSON.parse(item) : null;
 };
 
-const setItem = (key: string, value: any) => AsyncStorage.setItem(key, JSON.stringify(value));
+const setItem = (key: string, value: any) =>
+  AsyncStorage.setItem(key, JSON.stringify(value));
 
 const removeItem = (key: string) => AsyncStorage.removeItem(key);
 
