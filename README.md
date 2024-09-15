@@ -15,6 +15,8 @@ A factory to easily create Persistent Mobx State Tree Store Provider and consume
     - [Type Definition](#type-definition)
     - [Arguments](#arguments)
     - [PersistentStoreOptions](#persistentstoreoptions)
+- [Notes](#notes)
+  - [`disallowList`](#disallowlist)
 - [License](#license)
 - [Contribution](#contribution)
 
@@ -204,20 +206,20 @@ const createPersistentStore: <T extends IAnyModelType>(
   store: T,
   storage: StorageOptions,
   init: SnapshotIn<T>,
-  blacklist?: PartialDeep<SnapshotIn<T>>,
+  disallowList?: PartialDeep<SnapshotIn<T>>,
   options?: Partial<PersistentStoreOptions>
 ) => readonly [React.FC, () => Instance<T>];
 ```
 
 #### Arguments
 
-| param     | type                              | required | description                                                                                                                                                                                               |
-| --------- | --------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| store     | `T extends IAnyModelType`         | yes      | the mst model to instantiate                                                                                                                                                                              |
-| storage   | `StorageOptions`                  | yes      | the storage to use. Use `defaultStorage` from `mst-persistent-store/storage` to use the `@react-native-async-storage/async-storage` (for React Native) or `localforage` (for Web) backed default storage. |
-| init      | `SnapshotIn<T>`                   | yes      | the init data of the store                                                                                                                                                                                |
-| blacklist | `PartialDeep<SnapshotIn<T>>`      | no       | the part of the store that should not be persisted                                                                                                                                                        |
-| options   | `Partial<PersistentStoreOptions>` | no       | Various options to change store behavior                                                                                                                                                                  |
+| param        | type                              | required | description                                                                                                                                                                                                     |
+| ------------ | --------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| store        | `T extends IAnyModelType`         | yes      | the mst model to instantiate                                                                                                                                                                                    |
+| storage      | `StorageOptions`                  | yes      | the storage to use. Use `defaultStorage` from `mst-persistent-store/dist//storage` to use the `@react-native-async-storage/async-storage` (for React Native) or `localforage` (for Web) backed default storage. |
+| init         | `SnapshotIn<T>`                   | yes      | the init data of the store                                                                                                                                                                                      |
+| disallowList | `PartialDeep<SnapshotIn<T>>`      | no       | the part of the store that should not be persisted. See notes below                                                                                                                                             |
+| options      | `Partial<PersistentStoreOptions>` | no       | Various options to change store behavior                                                                                                                                                                        |
 
 #### PersistentStoreOptions
 
@@ -229,6 +231,14 @@ All Properties are optional.
 | writeDelay | `number`  | 1500                         | On Repeated Store Update, it's advisable to wait<br>a certain time before updating the persistent <br>storage with new snapshot. This value controls the<br>debounce delay. |
 | logging    | `boolean` | true is dev<br>false in prod | Whether to enable logging.                                                                                                                                                  |
 | devtool    | `boolean` | true in dev<br>false in prod | Whether to integrate with mobx-devtool                                                                                                                                      |
+
+## Notes
+
+### `disallowList`
+
+`disallowList` is used to specify the part of the store that should not be persisted. This is useful when you have some part of the store that should not be persisted. For example, you may have a part of the store that is used for UI state management and should not be persisted.
+
+This is a deep partial of the store snapshot. Anything passed here will replace the value on hydration.
 
 ## License
 
