@@ -12,7 +12,7 @@ export interface StorageOptions {
   removeItem: (key: string) => Promise<void> | void;
 }
 
-export interface PersistentStoreOptions<T extends IAnyModelType> {
+export interface PersistentStoreOptions<T extends IAnyModelType = IAnyModelType> {
   /**
    * the key to use as the localforage key. default is 'persistentStore'.
    * must be changed when using multiple stores in the same app to avoid
@@ -37,6 +37,7 @@ export interface PersistentStoreOptions<T extends IAnyModelType> {
   devtool: boolean;
   /**
    * Callback function after the store is hydrated.
+   * takes the store instance as parameter.
    */
   onHydrate?: (store: Instance<T>) => void;
 }
@@ -46,7 +47,7 @@ const isDev =
     ? true
     : false;
 
-const defaultOptions: PersistentStoreOptions<IAnyModelType> = {
+const defaultOptions: PersistentStoreOptions = {
   storageKey: 'persistentStore',
   writeDelay: 1500,
   logging: isDev,

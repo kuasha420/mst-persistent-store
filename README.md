@@ -196,18 +196,19 @@ export interface StorageOptions {
   removeItem: (key: string) => Promise<void> | void;
 }
 
-interface PersistentStoreOptions {
+interface PersistentStoreOptions<T extends IAnyModelType> {
   storageKey: string;
   writeDelay: number;
   logging: boolean;
   devtool: boolean;
+  onHydrate?: (store: Instance<T>) => void;
 }
 const createPersistentStore: <T extends IAnyModelType>(
   store: T,
   storage: StorageOptions,
   init: SnapshotIn<T>,
   disallowList?: PartialDeep<SnapshotIn<T>>,
-  options?: Partial<PersistentStoreOptions>
+  options?: Partial<PersistentStoreOptions<T>>
 ) => readonly [React.FC, () => Instance<T>];
 ```
 
@@ -225,12 +226,13 @@ const createPersistentStore: <T extends IAnyModelType>(
 
 All Properties are optional.
 
-| property   | type      | default                      | description                                                                                                                                                                 |
-| ---------- | --------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| storageKey | `string`  | persistentStore              | the key to use as the localforage key. Must be <br>changed when using multiple stores in the same<br>app to avoid overriding data.                                          |
-| writeDelay | `number`  | 1500                         | On Repeated Store Update, it's advisable to wait<br>a certain time before updating the persistent <br>storage with new snapshot. This value controls the<br>debounce delay. |
-| logging    | `boolean` | true is dev<br>false in prod | Whether to enable logging.                                                                                                                                                  |
-| devtool    | `boolean` | true in dev<br>false in prod | Whether to integrate with mobx-devtool                                                                                                                                      |
+| property   | type                           | default                      | description                                                                                                                                                                 |
+| ---------- | ------------------------------ | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| storageKey | `string`                       | persistentStore              | the key to use as the localforage key. Must be <br>changed when using multiple stores in the same<br>app to avoid overriding data.                                          |
+| writeDelay | `number`                       | 1500                         | On Repeated Store Update, it's advisable to wait<br>a certain time before updating the persistent <br>storage with new snapshot. This value controls the<br>debounce delay. |
+| logging    | `boolean`                      | true is dev<br>false in prod | Whether to enable logging.                                                                                                                                                  |
+| devtool    | `boolean`                      | true in dev<br>false in prod | Whether to integrate with mobx-devtool                                                                                                                                      |
+| onHydrate  | `(store: Instance<T>) => void` |                              | callback function after the store is hydrated                                                                                                                               |
 
 ## Notes
 
