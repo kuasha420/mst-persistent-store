@@ -12,7 +12,7 @@ export interface StorageOptions {
   removeItem: (key: string) => Promise<void> | void;
 }
 
-export interface PersistentStoreOptions {
+export interface PersistentStoreOptions<T extends IAnyModelType> {
   /**
    * the key to use as the localforage key. default is 'persistentStore'.
    * must be changed when using multiple stores in the same app to avoid
@@ -35,6 +35,10 @@ export interface PersistentStoreOptions {
    * enabled on development mode only.
    */
   devtool: boolean;
+  /**
+   * Callback function after the store is hydrated.
+   */
+  onHydrate?: (store: Instance<T>) => void;
 }
 
 const isDev =
@@ -42,7 +46,7 @@ const isDev =
     ? true
     : false;
 
-const defaultOptions: PersistentStoreOptions = {
+const defaultOptions: PersistentStoreOptions<IAnyModelType> = {
   storageKey: 'persistentStore',
   writeDelay: 1500,
   logging: isDev,
@@ -83,9 +87,9 @@ const createPersistentStore = <T extends IAnyModelType>(
   /** Part of the store that will not be persisted. */
   disallowList?: PartialDeep<SnapshotIn<T>>,
   /** Various options to change store behavior. */
-  options?: Partial<PersistentStoreOptions>
+  options?: Partial<PersistentStoreOptions<T>>
 ) => {
-  const { storageKey, writeDelay, devtool, logging } = options
+  const { storageKey, writeDelay, devtool, logging, onHydrate } = options
     ? { ...defaultOptions, ...options }
     : defaultOptions;
   const initStore = disallowList ? recursiveObjectSpread(init, disallowList) : init;
@@ -101,6 +105,7 @@ const createPersistentStore = <T extends IAnyModelType>(
     useAsyncEffect(
       async (isMounted) => {
         const data = await storage.getItem(storageKey);
+
         if (data && isMounted()) {
           try {
             logger('Hydrating Store from Storage');
@@ -111,6 +116,10 @@ const createPersistentStore = <T extends IAnyModelType>(
             logger('Failed to hydrate store. Throwing away data from storage.');
             await storage.removeItem(storageKey);
           }
+        }
+
+        if (isMounted()) {
+          onHydrate?.(mstStore);
         }
 
         if (devtool) {
