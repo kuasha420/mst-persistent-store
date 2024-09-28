@@ -168,55 +168,8 @@ describe('hydrate store', () => {
   });
 
   describe('should hydrate store', () => {
-    it.only('when data is correct', () => {
-      const snapshot = {
-        name: 'Jane Darlene',
-        age: 25,
-        score: 120,
-        weight: 65.5,
-        balabnce: 2000.0,
-        premium: false,
-        birthDate: JaneBirthDateMilliseconds,
-        testNull: null,
-        title: 'Some other title',
-        description: 'Some other description',
-        address: {
-          street: '123 Main St',
-          city: 'Anytown',
-          state: 'NY',
-          zip: 12345,
-          country: 'USA',
-        },
-        additionalAddresses: [
-          {
-            street: '456 Elm St',
-            city: 'Anytown',
-            state: 'NY',
-            zip: 12345,
-            country: 'USA',
-          },
-          {
-            street: '789 Oak St',
-            city: 'Anytown',
-            state: 'NY',
-            zip: 12345,
-            country: 'USA',
-          },
-        ],
-        profile: {
-          firstName: 'Jane',
-          lastName: 'Darlene',
-        },
-        features: ['One', 'Two', 'Three'],
-        favorites: [
-          { slug: 'first', postname: 'First post' },
-          { slug: 'second', postname: 'Second post' },
-        ],
-        todos: {
-          1: { id: 1, text: 'First todo', done: false },
-          2: { id: 2, text: 'Second todo', done: true },
-        },
-      };
+    it('when data is correct', () => {
+      const snapshot = snapshotModifier(testSnapshow);
 
       hydrateStore(store, snapshot);
 
