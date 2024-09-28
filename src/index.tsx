@@ -5,6 +5,7 @@ import { debounce } from './utils/debounce';
 import createLogger from './utils/create-logger';
 import recursiveObjectSpread from './utils/recursive-object-spread';
 import { PartialDeep } from './types/partial-deep';
+import isObject from './utils/is-object';
 
 export interface StorageOptions {
   setItem: (key: string, value: any) => Promise<void> | void;
@@ -43,9 +44,7 @@ export interface PersistentStoreOptions<T extends IAnyModelType = IAnyModelType>
 }
 
 const isDev =
-  typeof process === 'object' && process.env && process.env.NODE_ENV === 'development'
-    ? true
-    : false;
+  typeof isObject(process) && process.env && process.env.NODE_ENV === 'development' ? true : false;
 
 const defaultOptions: PersistentStoreOptions = {
   storageKey: 'persistentStore',
