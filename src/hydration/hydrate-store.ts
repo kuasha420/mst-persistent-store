@@ -1,6 +1,20 @@
 import { assign, get, remove } from '@hyperjump/json-pointer';
-import { applySnapshot, getSnapshot, IAnyModelType, Instance, SnapshotIn } from 'mobx-state-tree';
+import {
+  applySnapshot,
+  getSnapshot,
+  getType,
+  IAnyModelType,
+  Instance,
+  isArrayType,
+  isMapType,
+  isModelType,
+  isOptionalType,
+  SnapshotIn,
+  tryResolve,
+} from 'mobx-state-tree';
 import isObject from 'src/utils/is-object';
+
+const mstPrimitiveTypes = ['string', 'number', 'integer', 'float', 'finite', 'boolean', 'Date'];
 
 const pathRegExp = new RegExp('at path "([^"]+)"');
 const typeRegExp = new RegExp('type: `([^`]+)`');
@@ -11,7 +25,7 @@ const transformErrorsToObjects = (message: string) => {
     .filter((line) => line.includes('at path'))
     .map((line) => line.trim());
 
-  return errors.map((error) => {
+  const formattedErrors = errors.map((error) => {
     const path = error.match(pathRegExp)?.[1];
     const typeString = error.match(typeRegExp)?.[1];
 
@@ -34,6 +48,17 @@ const transformErrorsToObjects = (message: string) => {
       pathSegments,
     };
   });
+
+  const errorsDedupSet = new Set<string>();
+  const dedupedErrors = formattedErrors.filter((error) => {
+    if (errorsDedupSet.has(error.path)) {
+      return false;
+    }
+    errorsDedupSet.add(error.path);
+    return true;
+  });
+
+  return dedupedErrors;
 };
 
 const removeEmptyItemsRecursively = (obj: any): any => {
@@ -52,7 +77,29 @@ const removeEmptyItemsRecursively = (obj: any): any => {
   }
 };
 
-const mstPrimitiveTypes = ['string', 'number', 'integer', 'float', 'finite', 'boolean', 'Date'];
+const tryResolveNearestExistingParent = (
+  store: IAnyModelType,
+  pathSegments: string[],
+  path: string
+): {
+  nearestParentNode: IAnyModelType;
+  nearestParentPath: string;
+  childPath: string;
+} | null => {
+  let childPath = path;
+  for (let i = pathSegments.length - 1; i > 0; i--) {
+    const path = pathSegments.slice(0, i).join('/');
+    const node = tryResolve(store, path);
+
+    if (node) {
+      return { nearestParentNode: node, nearestParentPath: path, childPath };
+    }
+
+    childPath = path;
+  }
+
+  return null;
+};
 
 const hydrateStore = <T extends IAnyModelType>(store: Instance<T>, snapshot: SnapshotIn<T>) => {
   try {
@@ -65,22 +112,79 @@ const hydrateStore = <T extends IAnyModelType>(store: Instance<T>, snapshot: Sna
 
       const newSnapshot: SnapshotIn<T> = JSON.parse(JSON.stringify(snapshot));
 
-      errors.forEach(({ path, types }) => {
+      const processedPaths = new Set<string>();
+
+      errors.forEach(({ path, pathSegments, types, isNested }) => {
         // If the type is nullable, replace the value with corresponding nullable type
         if (types.includes('null')) {
           assign(path, newSnapshot, null);
+          processedPaths.add(path);
           return;
         }
         if (types.includes('undefined')) {
           remove(path, newSnapshot);
+          processedPaths.add(path);
           return;
+        }
+
+        // For nested paths
+        if (isNested) {
+          // Do not process if the parent path is already processed
+          const parentPath = path.split('/').slice(0, -1).join('/');
+          if (processedPaths.has(parentPath)) {
+            processedPaths.add(path);
+            return;
+          }
+
+          // If the parent path is not processed, we need to handle
+          // the parent types for the model, array, and map types.
+          // For other types, the logic is same as the non-nested paths.
+          const nearestParent = tryResolveNearestExistingParent(store, pathSegments, path);
+
+          if (nearestParent) {
+            const parentNodeType = getType(nearestParent.nearestParentNode);
+
+            // If parent node is a model type
+            if (isModelType(parentNodeType)) {
+              // if the parent node is optional, we should remove this from the snapshot
+              if (isOptionalType(parentNodeType)) {
+                remove(nearestParent.nearestParentPath, newSnapshot);
+              } else {
+                // If the parent node is required, we should replace the value with default value
+                assign(nearestParent.nearestParentPath, newSnapshot, {
+                  ...(get(nearestParent.nearestParentPath, storeSnapshot) as Record<
+                    string,
+                    unknown
+                  >),
+                  ...(get(nearestParent.nearestParentPath, newSnapshot) as Record<string, unknown>),
+                });
+              }
+              processedPaths.add(nearestParent.nearestParentPath);
+              processedPaths.add(nearestParent.childPath);
+            } else if (isArrayType(parentNodeType)) {
+              // If the parent node is an array type, Remove the item from the array
+              remove(nearestParent.childPath, newSnapshot);
+              processedPaths.add(nearestParent.childPath);
+            } else if (isMapType(parentNodeType)) {
+              // If the parent node is a map type, Remove the key from the map
+              remove(nearestParent.childPath, newSnapshot);
+              processedPaths.add(nearestParent.childPath);
+            }
+            return;
+          }
         }
 
         // If the type is a primitive type, replace the value with default value
         if (types.some((type) => mstPrimitiveTypes.includes(type))) {
           assign(path, newSnapshot, get(path, storeSnapshot));
+          processedPaths.add(path);
           return;
         }
+
+        // If the type is not nullable and not a primitive type, it is a required complex type
+        // Replace the value with default value.
+        assign(path, newSnapshot, get(path, storeSnapshot));
+        processedPaths.add(path);
       });
 
       const finalSnapshot = removeEmptyItemsRecursively(newSnapshot);

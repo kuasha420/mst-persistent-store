@@ -1159,7 +1159,9 @@ describe('hydrate store', () => {
           expect(store.profile.firstName).toBe('Jane');
           expect(store.profile.lastName).toBe(testInitialState.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.todos.toJSON()).toStrictEqual({
+            '2': { id: 2, text: 'Second todo', done: true },
+          });
         });
 
         it('for an array of models', () => {
@@ -1185,7 +1187,7 @@ describe('hydrate store', () => {
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.favorites).toStrictEqual({});
+          expect(store.favorites).toStrictEqual([]);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
         });
       });
