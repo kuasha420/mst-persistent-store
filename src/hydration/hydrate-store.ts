@@ -89,6 +89,12 @@ const tryResolveNearestExistingParent = (
   let childPath = path;
   for (let i = pathSegments.length - 1; i > 0; i--) {
     const path = pathSegments.slice(0, i).join('/');
+
+    // Return null if we reach the root
+    if (path === '') {
+      return null;
+    }
+
     const node = tryResolve(store, path);
 
     if (node) {
