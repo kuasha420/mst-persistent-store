@@ -50,13 +50,15 @@ const transformErrorsToObjects = (message: string) => {
   });
 
   const errorsDedupSet = new Set<string>();
-  const dedupedErrors = formattedErrors.filter((error) => {
-    if (errorsDedupSet.has(error.path)) {
-      return false;
-    }
-    errorsDedupSet.add(error.path);
-    return true;
-  });
+  const dedupedErrors = formattedErrors
+    .sort((a, b) => b.path.localeCompare(a.path))
+    .filter((error) => {
+      if (errorsDedupSet.has(error.path)) {
+        return false;
+      }
+      errorsDedupSet.add(error.path);
+      return true;
+    });
 
   return dedupedErrors;
 };
@@ -77,15 +79,17 @@ const removeEmptyItemsRecursively = (obj: any): any => {
   }
 };
 
+interface NearestParent {
+  nearestParentNode: IAnyModelType;
+  nearestParentPath: string;
+  childPath: string;
+}
+
 const tryResolveNearestExistingParent = (
   store: IAnyModelType,
   pathSegments: string[],
   path: string
-): {
-  nearestParentNode: IAnyModelType;
-  nearestParentPath: string;
-  childPath: string;
-} | null => {
+): NearestParent | null => {
   let childPath = path;
   for (let i = pathSegments.length - 1; i > 0; i--) {
     const path = pathSegments.slice(0, i).join('/');
@@ -116,9 +120,52 @@ const hydrateStore = <T extends IAnyModelType>(store: Instance<T>, snapshot: Sna
 
       const errors = transformErrorsToObjects(error.message);
 
+      console.debug('Errors while hydrating store', errors);
+
       const newSnapshot: SnapshotIn<T> = JSON.parse(JSON.stringify(snapshot));
 
       const processedPaths = new Set<string>();
+
+      const handleNestedErrorHydration = (pathSegments: string[], path: string) => {
+        // If the parent path is not processed, we need to handle
+        // the parent types for the model, array, and map types.
+        // For other types, the logic is same as the non-nested paths.
+        const nearestParent = tryResolveNearestExistingParent(store, pathSegments, path);
+
+        if (nearestParent) {
+          const parentNodeType = getType(nearestParent.nearestParentNode);
+
+          if (isArrayType(parentNodeType)) {
+            // If the parent node is an array type, Remove the item from the array
+            remove(nearestParent.childPath, newSnapshot);
+            processedPaths.add(nearestParent.childPath);
+          } else if (isMapType(parentNodeType)) {
+            // If the parent node is a map type, Remove the key from the map
+            remove(nearestParent.childPath, newSnapshot);
+            processedPaths.add(nearestParent.childPath);
+          } else if (isModelType(parentNodeType)) {
+            // if the parent node is optional, we should remove this from the snapshot
+            if (isOptionalType(parentNodeType)) {
+              remove(nearestParent.nearestParentPath, newSnapshot);
+              processedPaths.add(nearestParent.nearestParentPath);
+              processedPaths.add(nearestParent.childPath);
+            } else {
+              try {
+                assign(nearestParent.nearestParentPath, newSnapshot, {
+                  ...(get(nearestParent.nearestParentPath, storeSnapshot) as Record<
+                    string,
+                    unknown
+                  >),
+                  ...(get(nearestParent.nearestParentPath, newSnapshot) as Record<string, unknown>),
+                });
+                processedPaths.add(nearestParent.childPath);
+              } catch (error) {
+                console.debug('Error while hydrating nested path', nearestParent, error);
+              }
+            }
+          }
+        }
+      };
 
       errors.forEach(({ path, pathSegments, types, isNested }) => {
         // If the type is nullable, replace the value with corresponding nullable type
@@ -142,42 +189,7 @@ const hydrateStore = <T extends IAnyModelType>(store: Instance<T>, snapshot: Sna
             return;
           }
 
-          // If the parent path is not processed, we need to handle
-          // the parent types for the model, array, and map types.
-          // For other types, the logic is same as the non-nested paths.
-          const nearestParent = tryResolveNearestExistingParent(store, pathSegments, path);
-
-          if (nearestParent) {
-            const parentNodeType = getType(nearestParent.nearestParentNode);
-
-            // If parent node is a model type
-            if (isModelType(parentNodeType)) {
-              // if the parent node is optional, we should remove this from the snapshot
-              if (isOptionalType(parentNodeType)) {
-                remove(nearestParent.nearestParentPath, newSnapshot);
-              } else {
-                // If the parent node is required, we should replace the value with default value
-                assign(nearestParent.nearestParentPath, newSnapshot, {
-                  ...(get(nearestParent.nearestParentPath, storeSnapshot) as Record<
-                    string,
-                    unknown
-                  >),
-                  ...(get(nearestParent.nearestParentPath, newSnapshot) as Record<string, unknown>),
-                });
-              }
-              processedPaths.add(nearestParent.nearestParentPath);
-              processedPaths.add(nearestParent.childPath);
-            } else if (isArrayType(parentNodeType)) {
-              // If the parent node is an array type, Remove the item from the array
-              remove(nearestParent.childPath, newSnapshot);
-              processedPaths.add(nearestParent.childPath);
-            } else if (isMapType(parentNodeType)) {
-              // If the parent node is a map type, Remove the key from the map
-              remove(nearestParent.childPath, newSnapshot);
-              processedPaths.add(nearestParent.childPath);
-            }
-            return;
-          }
+          return handleNestedErrorHydration(pathSegments, path);
         }
 
         // If the type is a primitive type, replace the value with default value

@@ -1,4 +1,4 @@
-import { Instance, SnapshotIn, types } from 'mobx-state-tree';
+import { applySnapshot, Instance, SnapshotIn, types } from 'mobx-state-tree';
 import { beforeEach, describe, expect, it } from 'vitest';
 import hydrateStore from './hydrate-store';
 
@@ -75,7 +75,7 @@ const testInitialState: SnapshotIn<TestStoreModel> = {
   },
 };
 
-const testSnapshow: SnapshotIn<TestStoreModel> = {
+const testSnapshot: SnapshotIn<TestStoreModel> = {
   name: 'Jane Darlene',
   age: 25,
   score: 120,
@@ -169,7 +169,7 @@ describe('hydrate store', () => {
 
   describe('should hydrate store', () => {
     it('when data is correct', () => {
-      const snapshot = snapshotModifier(testSnapshow);
+      const snapshot = snapshotModifier(testSnapshot);
 
       hydrateStore(store, snapshot);
 
@@ -197,7 +197,7 @@ describe('hydrate store', () => {
     describe('for MST primitive types', () => {
       describe('when a required field is missing or `undefined`', () => {
         it('for a string', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'name');
+          const snapshot = snapshotModifier(testSnapshot, 'name');
 
           hydrateStore(store, snapshot);
 
@@ -220,7 +220,7 @@ describe('hydrate store', () => {
         });
 
         it('for a number', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'age');
+          const snapshot = snapshotModifier(testSnapshot, 'age');
 
           hydrateStore(store, snapshot);
 
@@ -243,7 +243,7 @@ describe('hydrate store', () => {
         });
 
         it('for an integer', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'score');
+          const snapshot = snapshotModifier(testSnapshot, 'score');
 
           hydrateStore(store, snapshot);
 
@@ -266,7 +266,7 @@ describe('hydrate store', () => {
         });
 
         it('for a float', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'weight');
+          const snapshot = snapshotModifier(testSnapshot, 'weight');
 
           hydrateStore(store, snapshot);
 
@@ -289,7 +289,7 @@ describe('hydrate store', () => {
         });
 
         it('for a finite', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'balabnce');
+          const snapshot = snapshotModifier(testSnapshot, 'balabnce');
 
           hydrateStore(store, snapshot);
 
@@ -312,7 +312,7 @@ describe('hydrate store', () => {
         });
 
         it('for a boolean', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'premium');
+          const snapshot = snapshotModifier(testSnapshot, 'premium');
 
           hydrateStore(store, snapshot);
 
@@ -335,7 +335,7 @@ describe('hydrate store', () => {
         });
 
         it('for a Date', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'birthDate');
+          const snapshot = snapshotModifier(testSnapshot, 'birthDate');
 
           hydrateStore(store, snapshot);
 
@@ -358,7 +358,7 @@ describe('hydrate store', () => {
         });
 
         it('for a null', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'testNull');
+          const snapshot = snapshotModifier(testSnapshot, 'testNull');
 
           hydrateStore(store, snapshot);
 
@@ -381,7 +381,7 @@ describe('hydrate store', () => {
         });
 
         it('for an undefined', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'testUndefined');
+          const snapshot = snapshotModifier(testSnapshot, 'testUndefined');
 
           hydrateStore(store, snapshot);
 
@@ -413,7 +413,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a string', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'name', value);
+          const snapshot = snapshotModifier(testSnapshot, 'name', value);
 
           hydrateStore(store, snapshot);
 
@@ -443,7 +443,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a number', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'age', value);
+          const snapshot = snapshotModifier(testSnapshot, 'age', value);
 
           hydrateStore(store, snapshot);
 
@@ -474,7 +474,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for an integer', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'score', value);
+          const snapshot = snapshotModifier(testSnapshot, 'score', value);
 
           hydrateStore(store, snapshot);
 
@@ -505,7 +505,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a float', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'weight', value);
+          const snapshot = snapshotModifier(testSnapshot, 'weight', value);
 
           hydrateStore(store, snapshot);
 
@@ -538,7 +538,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a finite', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'balabnce', value);
+          const snapshot = snapshotModifier(testSnapshot, 'balabnce', value);
 
           hydrateStore(store, snapshot);
 
@@ -568,7 +568,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a boolean', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'premium', value);
+          const snapshot = snapshotModifier(testSnapshot, 'premium', value);
 
           hydrateStore(store, snapshot);
 
@@ -597,7 +597,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a Date', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'birthDate', value);
+          const snapshot = snapshotModifier(testSnapshot, 'birthDate', value);
 
           hydrateStore(store, snapshot);
 
@@ -627,7 +627,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a null', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'testNull', value);
+          const snapshot = snapshotModifier(testSnapshot, 'testNull', value);
 
           hydrateStore(store, snapshot);
 
@@ -658,7 +658,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for an undefined', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'testUndefined', value);
+          const snapshot = snapshotModifier(testSnapshot, 'testUndefined', value);
 
           hydrateStore(store, snapshot);
 
@@ -687,7 +687,7 @@ describe('hydrate store', () => {
     describe('for MST nullable types', () => {
       describe('when the field is missing or `undefined`', () => {
         it('for a maybeNull primitive type', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'title');
+          const snapshot = snapshotModifier(testSnapshot, 'title');
 
           hydrateStore(store, snapshot);
 
@@ -710,7 +710,7 @@ describe('hydrate store', () => {
         });
 
         it('for a maybe primitive type', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'description');
+          const snapshot = snapshotModifier(testSnapshot, 'description');
 
           hydrateStore(store, snapshot);
 
@@ -729,7 +729,7 @@ describe('hydrate store', () => {
         });
 
         it('for a maybeNull complex type', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'address');
+          const snapshot = snapshotModifier(testSnapshot, 'address');
 
           hydrateStore(store, snapshot);
 
@@ -752,7 +752,7 @@ describe('hydrate store', () => {
         });
 
         it('for a maybe complex type', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'additionalAddresses');
+          const snapshot = snapshotModifier(testSnapshot, 'additionalAddresses');
 
           hydrateStore(store, snapshot);
 
@@ -784,7 +784,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a maybeNull primitive type', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'title', value);
+          const snapshot = snapshotModifier(testSnapshot, 'title', value);
 
           hydrateStore(store, snapshot);
 
@@ -814,7 +814,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a maybe primitive type', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'description', value);
+          const snapshot = snapshotModifier(testSnapshot, 'description', value);
 
           hydrateStore(store, snapshot);
 
@@ -841,7 +841,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a maybeNull complex type', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'address', value);
+          const snapshot = snapshotModifier(testSnapshot, 'address', value);
 
           hydrateStore(store, snapshot);
 
@@ -872,7 +872,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a maybe complex type', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'additionalAddresses', value);
+          const snapshot = snapshotModifier(testSnapshot, 'additionalAddresses', value);
 
           hydrateStore(store, snapshot);
 
@@ -900,7 +900,7 @@ describe('hydrate store', () => {
     describe('for MST complex types', () => {
       describe('when the field is missing or `undefined`', () => {
         it('for a model', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'profile');
+          const snapshot = snapshotModifier(testSnapshot, 'profile');
 
           hydrateStore(store, snapshot);
 
@@ -922,7 +922,7 @@ describe('hydrate store', () => {
         });
 
         it('for an array of primitives', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'features');
+          const snapshot = snapshotModifier(testSnapshot, 'features');
 
           hydrateStore(store, snapshot);
 
@@ -945,7 +945,7 @@ describe('hydrate store', () => {
         });
 
         it('for an array of models', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'favorites');
+          const snapshot = snapshotModifier(testSnapshot, 'favorites');
 
           hydrateStore(store, snapshot);
 
@@ -968,7 +968,7 @@ describe('hydrate store', () => {
         });
 
         it('for a map', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'todos');
+          const snapshot = snapshotModifier(testSnapshot, 'todos');
 
           hydrateStore(store, snapshot);
 
@@ -1001,7 +1001,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a model', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'profile', value);
+          const snapshot = snapshotModifier(testSnapshot, 'profile', value);
 
           hydrateStore(store, snapshot);
 
@@ -1030,7 +1030,7 @@ describe('hydrate store', () => {
           ['null', null],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for an array of primitives', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'features', value);
+          const snapshot = snapshotModifier(testSnapshot, 'features', value);
 
           hydrateStore(store, snapshot);
 
@@ -1061,7 +1061,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for an array of models', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'favorites', value);
+          const snapshot = snapshotModifier(testSnapshot, 'favorites', value);
 
           hydrateStore(store, snapshot);
 
@@ -1092,7 +1092,7 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a map', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshow, 'todos', value);
+          const snapshot = snapshotModifier(testSnapshot, 'todos', value);
 
           hydrateStore(store, snapshot);
 
@@ -1114,61 +1114,37 @@ describe('hydrate store', () => {
           expect(store.todos.toJSON()).toStrictEqual({});
         });
       });
+    });
 
-      describe('when the data is partially missing or `undefined`', () => {
-        it('for a model', () => {
-          const snapshot = snapshotModifier(
-            testSnapshow,
-            ['address', 'profile', 'favorites', 'todos'],
-            [
-              // 'address'
-              {
-                street: '123 Main St',
-                city: 'Springfield',
-                state: 'IL',
-                zip: '62701',
-              },
-              // 'profile'
-              {
-                firstName: 'Jane',
-              },
-              // 'favorites'
-              [{ slug: 'first' }, { postname: 'Second post' }],
-              // 'todos'
-              {
-                '1': { id: 1, text: 'First todo', done: 'false' },
-                '2': { id: 2, text: 'Second todo', done: true },
-              },
-            ]
-          );
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe('Jane');
-          expect(store.profile.lastName).toBe(testInitialState.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual({
-            '2': { id: 2, text: 'Second todo', done: true },
-          });
-        });
-
-        it('for an array of models', () => {
-          const snapshot = snapshotModifier(testSnapshow, 'favorites', [
-            { slug: 'first' },
-            { postname: 'Second post' },
-          ]);
+    describe('when the data is partially missing or incorrect', () => {
+      it.for([
+        [
+          'missing fields',
+          {
+            city: 'New York',
+            country: 'USA',
+          },
+        ],
+        [
+          'incorrect fields',
+          {
+            street: 123,
+            city: 'New York',
+            country: 'USA',
+          },
+        ],
+        [
+          'missing and incorrect fields',
+          {
+            street: 123,
+            country: 'USA',
+            zip: '10001',
+          },
+        ],
+      ])(
+        'for incorrect data (%s) inside a model which is an optional field without initial value',
+        ([, value]) => {
+          const snapshot = snapshotModifier(testSnapshot, 'address', value);
 
           hydrateStore(store, snapshot);
 
@@ -1184,12 +1160,153 @@ describe('hydrate store', () => {
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).toBe(null);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.favorites).toStrictEqual([]);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
+        }
+      );
+
+      it.for([
+        [
+          'missing fields',
+          {
+            city: 'New York',
+            country: 'USA',
+          },
+        ],
+        [
+          'incorrect fields',
+          {
+            street: 123,
+            city: 'New York',
+            country: 'USA',
+          },
+        ],
+        [
+          'missing and incorrect fields',
+          {
+            street: 123,
+            country: 'USA',
+            zip: '10001',
+          },
+        ],
+      ])(
+        'for incorrect data (%s) inside a model which is an optional field with initial value',
+        ([, value]) => {
+          applySnapshot(store, testSnapshot);
+
+          expect(store.address).toStrictEqual(testSnapshot.address);
+
+          const snapshot = snapshotModifier(testSnapshot, 'address', value);
+
+          hydrateStore(store, snapshot);
+
+          expect(store.name).toBe(snapshot.name);
+          expect(store.age).toBe(snapshot.age);
+          expect(store.score).toBe(snapshot.score);
+          expect(store.weight).toBe(snapshot.weight);
+          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.premium).toBe(snapshot.premium);
+          expect(store.birthDate).toStrictEqual(JaneBirthDate);
+          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.testNull).toBeNull();
+          expect(store.testUndefined).toBeUndefined();
+          expect(store.title).toBe(snapshot.title);
+          expect(store.description).toBe(snapshot.description);
+          expect(store.address).toBe(null);
+          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
+          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
+          expect(store.features).toStrictEqual(snapshot.features);
+          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+        }
+      );
+
+      it.only.for([
+        [
+          'missing fields',
+          [
+            {
+              city: 'New York',
+              country: 'USA',
+            },
+          ],
+        ],
+        // [
+        //   'incorrect fields',
+        //   [
+        //     {
+        //       street: 123,
+        //       city: 'New York',
+        //       country: 'USA',
+        //     },
+        //   ],
+        // ],
+        // [
+        //   'missing and incorrect fields',
+        //   [
+        //     {
+        //       street: 123,
+        //       country: 'USA',
+        //       zip: '10001',
+        //     },
+        //   ],
+        // ],
+      ])('for incorrect data (%s) inside a model which is inside an array', ([, value]) => {
+        const snapshot = snapshotModifier(testSnapshot, 'additionalAddresses', [
+          {
+            street: '456 Elm St',
+            city: 'Anytown',
+            state: 'NY',
+            zip: 12345,
+            country: 'USA',
+          },
+          {
+            street: '789 Oak St',
+            city: 'Anytown',
+            state: 'NY',
+            zip: 12345,
+            country: 'USA',
+          },
+          ...value,
+        ]);
+
+        hydrateStore(store, snapshot);
+
+        expect(store.name).toBe(snapshot.name);
+        expect(store.age).toBe(snapshot.age);
+        expect(store.score).toBe(snapshot.score);
+        expect(store.weight).toBe(snapshot.weight);
+        expect(store.balabnce).toBe(snapshot.balabnce);
+        expect(store.premium).toBe(snapshot.premium);
+        expect(store.birthDate).toStrictEqual(JaneBirthDate);
+        expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+        expect(store.testNull).toBeNull();
+        expect(store.testUndefined).toBeUndefined();
+        expect(store.title).toBe(snapshot.title);
+        expect(store.description).toBe(snapshot.description);
+        expect(store.address).toStrictEqual(snapshot.address);
+        expect(store.additionalAddresses).toStrictEqual([
+          {
+            street: '456 Elm St',
+            city: 'Anytown',
+            state: 'NY',
+            zip: 12345,
+            country: 'USA',
+          },
+          {
+            street: '789 Oak St',
+            city: 'Anytown',
+            state: 'NY',
+            zip: 12345,
+            country: 'USA',
+          },
+        ]);
+        expect(store.profile.firstName).toBe(snapshot.profile.firstName);
+        expect(store.profile.lastName).toBe(snapshot.profile.lastName);
+        expect(store.features).toStrictEqual(snapshot.features);
+        expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
       });
     });
   });
