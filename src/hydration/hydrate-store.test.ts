@@ -1,4 +1,4 @@
-import { applySnapshot, Instance, SnapshotIn, types } from 'mobx-state-tree';
+import { Instance, SnapshotIn, types } from 'mobx-state-tree';
 import { beforeEach, describe, expect, it } from 'vitest';
 import hydrateStore from './hydrate-store';
 
@@ -75,91 +75,6 @@ const testInitialState: SnapshotIn<TestStoreModel> = {
   },
 };
 
-const testSnapshot: SnapshotIn<TestStoreModel> = {
-  name: 'Jane Darlene',
-  age: 25,
-  score: 120,
-  weight: 65.5,
-  balabnce: 2000.0,
-  premium: false,
-  birthDate: JaneBirthDateMilliseconds,
-  testNull: null,
-  title: 'Some other title',
-  description: 'Some other description',
-  address: {
-    street: '123 Main St',
-    city: 'Anytown',
-    state: 'NY',
-    zip: 12345,
-    country: 'USA',
-  },
-  additionalAddresses: [
-    {
-      street: '456 Elm St',
-      city: 'Anytown',
-      state: 'NY',
-      zip: 12345,
-      country: 'USA',
-    },
-    {
-      street: '789 Oak St',
-      city: 'Anytown',
-      state: 'NY',
-      zip: 12345,
-      country: 'USA',
-    },
-  ],
-  profile: {
-    firstName: 'Jane',
-    lastName: 'Darlene',
-  },
-  features: ['One', 'Two', 'Three'],
-  favorites: [
-    { slug: 'first', postname: 'First post' },
-    { slug: 'second', postname: 'Second post' },
-  ],
-  todos: {
-    1: { id: 1, text: 'First todo', done: false },
-    2: { id: 2, text: 'Second todo', done: true },
-  },
-};
-
-const snapshotModifier = (
-  snapshot: SnapshotIn<TestStoreModel>,
-  keys?: keyof SnapshotIn<TestStoreModel> | Array<keyof SnapshotIn<TestStoreModel>>,
-  values?: any | Array<any>
-) => {
-  const updatedSnapshot = structuredClone(snapshot);
-
-  if (!keys) {
-    return updatedSnapshot;
-  }
-
-  if (values === undefined) {
-    if (Array.isArray(keys)) {
-      keys.forEach((key) => {
-        delete updatedSnapshot[key];
-      });
-
-      return updatedSnapshot;
-    }
-
-    delete updatedSnapshot[keys];
-    return updatedSnapshot;
-  }
-
-  if (Array.isArray(keys)) {
-    if (!Array.isArray(values)) {
-      throw new Error('Values should be an array when keys is an array');
-    }
-
-    const spread = keys.reduce((acc, key, index) => ({ ...acc, [key]: values[index] }), {});
-
-    return { ...updatedSnapshot, ...spread };
-  }
-  return { ...updatedSnapshot, [keys]: values };
-};
-
 describe('hydrate store', () => {
   let store: Instance<TestStoreModel>;
 
@@ -169,9 +84,56 @@ describe('hydrate store', () => {
 
   describe('should hydrate store', () => {
     it('when data is correct', () => {
-      const snapshot = snapshotModifier(testSnapshot);
+      const snapshot: SnapshotIn<TestStoreModel> = {
+        name: 'Jane Darlene',
+        age: 25,
+        score: 120,
+        weight: 65.5,
+        balabnce: 2000.0,
+        premium: false,
+        birthDate: JaneBirthDateMilliseconds,
+        testNull: null,
+        title: 'Some other title',
+        description: 'Some other description',
+        address: {
+          street: '123 Main St',
+          city: 'Anytown',
+          state: 'NY',
+          zip: 12345,
+          country: 'USA',
+        },
+        additionalAddresses: [
+          {
+            street: '456 Elm St',
+            city: 'Anytown',
+            state: 'NY',
+            zip: 12345,
+            country: 'USA',
+          },
+          {
+            street: '789 Oak St',
+            city: 'Anytown',
+            state: 'NY',
+            zip: 12345,
+            country: 'USA',
+          },
+        ],
+        profile: {
+          firstName: 'Jane',
+          lastName: 'Darlene',
+        },
+        features: ['One', 'Two', 'Three'],
+        favorites: [
+          { slug: 'first', postname: 'First post' },
+          { slug: 'second', postname: 'Second post' },
+        ],
+        todos: {
+          1: { id: 1, text: 'First todo', done: false },
+          2: { id: 2, text: 'Second todo', done: true },
+        },
+      };
 
-      hydrateStore(store, snapshot);
+      hydrateStore(testStoreModel, store, snapshot);
 
       expect(store.name).toBe(snapshot.name);
       expect(store.age).toBe(snapshot.age);
@@ -193,1068 +155,32 @@ describe('hydrate store', () => {
   });
 
   describe('should partially hydrate store', () => {
-    // @link https://mobx-state-tree.js.org/overview/types#primitive-types
-    describe('for MST primitive types', () => {
-      describe('when a required field is missing or `undefined`', () => {
-        it('for a string', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'name');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(testInitialState.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it('for a number', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'age');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(testInitialState.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it('for an integer', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'score');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(testInitialState.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it('for a float', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'weight');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(testInitialState.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it('for a finite', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'balabnce');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(testInitialState.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it('for a boolean', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'premium');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(testInitialState.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it('for a Date', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'birthDate');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JohnBirthDate);
-          expect(store.birthDate.getTime()).toBe(JohnBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it('for a null', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'testNull');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it('for an undefined', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'testUndefined');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-      });
-
-      describe('when a required field is of wrong type', () => {
-        it.for([
-          ['number', 123],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a string', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'name', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(testInitialState.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it.for([
-          ['string', 'Invalid'],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a number', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'age', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(testInitialState.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it.for([
-          ['string', 'Invalid'],
-          ['float', 123.45],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for an integer', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'score', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(testInitialState.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it.for([
-          ['string', 'Invalid'],
-          ['integer', 123],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a float', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'weight', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(testInitialState.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it.for([
-          ['string', 'Invalid'],
-          ['infinity', Infinity],
-          ['NaN', NaN],
-          ['negative infinity', -Infinity],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a finite', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'balabnce', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(testInitialState.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it.for([
-          ['string', 'Invalid'],
-          ['number', 123],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a boolean', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'premium', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(testInitialState.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it.for([
-          ['string', 'Invalid'],
-          ['boolean', true],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a Date', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'birthDate', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JohnBirthDate);
-          expect(store.birthDate.getTime()).toBe(JohnBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it.for([
-          ['string', 'Invalid'],
-          ['number', 123],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a null', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'testNull', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it.for([
-          ['string', 'Invalid'],
-          ['number', 123],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for an undefined', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'testUndefined', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-      });
-    });
-
-    // @link https://mobx-state-tree.js.org/API/#maybenull
-    // @link https://mobx-state-tree.js.org/API/#maybe
-    describe('for MST nullable types', () => {
-      describe('when the field is missing or `undefined`', () => {
-        it('for a maybeNull primitive type', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'title');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBeNull();
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it('for a maybe primitive type', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'description');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBeUndefined();
-        });
-
-        it('for a maybeNull complex type', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'address');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it('for a maybe complex type', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'additionalAddresses');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-      });
-
-      describe('when the field is of wrong type', () => {
-        it.for([
-          ['number', 123],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a maybeNull primitive type', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'title', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBeNull();
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it.for([
-          ['number', 123],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a maybe primitive type', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'description', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBeUndefined();
-        });
-
-        it.for([
-          ['string', 'Invalid'],
-          ['number', 123],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a maybeNull complex type', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'address', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it.for([
-          ['string', 'Invalid'],
-          ['number', 123],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a maybe complex type', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'additionalAddresses', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-      });
-    });
-
-    // @link https://mobx-state-tree.js.org/overview/types#complex-types
-    describe('for MST complex types', () => {
-      describe('when the field is missing or `undefined`', () => {
-        it('for a model', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'profile');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(testInitialState.profile.firstName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it('for an array of primitives', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'features');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.features).toStrictEqual([]);
-          expect(store.favorites).toStrictEqual(snapshot.favorites);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it('for an array of models', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'favorites');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.favorites).toStrictEqual([]);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it('for a map', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'todos');
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.favorites).toStrictEqual(snapshot.favorites);
-          expect(store.todos.toJSON()).toStrictEqual({});
-        });
-      });
-
-      describe('when the field is of wrong type', () => {
-        it.for([
-          ['string', 'Invalid'],
-          ['number', 123],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a model', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'profile', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(testInitialState.profile.firstName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it.for([
-          ['string', 'Invalid'],
-          ['number', 123],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for an array of primitives', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'features', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.features).toStrictEqual([]);
-          expect(store.favorites).toStrictEqual(snapshot.favorites);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it.for([
-          ['string', 'Invalid'],
-          ['number', 123],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for an array of models', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'favorites', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.favorites).toStrictEqual([]);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        });
-
-        it.for([
-          ['string', 'Invalid'],
-          ['number', 123],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a map', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'todos', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.favorites).toStrictEqual(snapshot.favorites);
-          expect(store.todos.toJSON()).toStrictEqual({});
-        });
-      });
-    });
-
-    describe('when the data is partially missing or incorrect', () => {
-      it.for([
-        [
-          'missing fields',
+    it('when data is incorrect', () => {
+      const snapshot = {
+        name: 1,
+        age: '25',
+        score: 120.5,
+        weight: 65,
+        balabnce: Infinity,
+        premium: 0,
+        birthDate: '2024-10-02T03:23:58.663Z',
+        testNull: undefined,
+        title: 7,
+        description: 67,
+        address: {
+          street: 12,
+          city: 'Anytown',
+          state: 'NY',
+          zip: '12345',
+        },
+        additionalAddresses: [
           {
-            city: 'New York',
+            street: '456 Elm St',
+            city: 'Anytown',
+            state: 69,
+            zip: 12345,
             country: 'USA',
           },
-        ],
-        [
-          'incorrect fields',
-          {
-            street: 123,
-            city: 'New York',
-            country: 'USA',
-          },
-        ],
-        [
-          'missing and incorrect fields',
-          {
-            street: 123,
-            country: 'USA',
-            zip: '10001',
-          },
-        ],
-      ])(
-        'for incorrect data (%s) inside a model which is an optional field without initial value',
-        ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'address', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.address).toBe(null);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        }
-      );
-
-      it.for([
-        [
-          'missing fields',
-          {
-            city: 'New York',
-            country: 'USA',
-          },
-        ],
-        [
-          'incorrect fields',
-          {
-            street: 123,
-            city: 'New York',
-            country: 'USA',
-          },
-        ],
-        [
-          'missing and incorrect fields',
-          {
-            street: 123,
-            country: 'USA',
-            zip: '10001',
-          },
-        ],
-      ])(
-        'for incorrect data (%s) inside a model which is an optional field with initial value',
-        ([, value]) => {
-          applySnapshot(store, testSnapshot);
-
-          expect(store.address).toStrictEqual(testSnapshot.address);
-
-          const snapshot = snapshotModifier(testSnapshot, 'address', value);
-
-          hydrateStore(store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
-          expect(store.address).toBe(null);
-          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-          expect(store.features).toStrictEqual(snapshot.features);
-          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-        }
-      );
-
-      it.only.for([
-        [
-          'missing fields',
-          [
-            {
-              city: 'New York',
-              country: 'USA',
-            },
-          ],
-        ],
-        // [
-        //   'incorrect fields',
-        //   [
-        //     {
-        //       street: 123,
-        //       city: 'New York',
-        //       country: 'USA',
-        //     },
-        //   ],
-        // ],
-        // [
-        //   'missing and incorrect fields',
-        //   [
-        //     {
-        //       street: 123,
-        //       country: 'USA',
-        //       zip: '10001',
-        //     },
-        //   ],
-        // ],
-      ])('for incorrect data (%s) inside a model which is inside an array', ([, value]) => {
-        const snapshot = snapshotModifier(testSnapshot, 'additionalAddresses', [
           {
             street: '456 Elm St',
             city: 'Anytown',
@@ -1263,31 +189,54 @@ describe('hydrate store', () => {
             country: 'USA',
           },
           {
-            street: '789 Oak St',
+            street: null,
             city: 'Anytown',
             state: 'NY',
             zip: 12345,
+            country: 7,
+          },
+        ],
+        profile: {
+          firstName: 5,
+          lastName: 'Darlene',
+        },
+        features: ['One', 'Two', 3, true],
+        favorites: [
+          { slug: 'first', postname: 1 },
+          { slug: 'second', postname: 'Second post' },
+        ],
+        todos: {
+          1: { id: 1, text: 'First todo', done: 'false' },
+          2: { id: '2', text: 'Second todo', done: true },
+        },
+      };
+
+      const snapshot2 = {
+        name: 'Jane Darlene',
+        age: 25,
+        score: 120,
+        weight: 65.5,
+        balabnce: 2000.0,
+        premium: false,
+        birthDate: JaneBirthDateMilliseconds,
+        testNull: null,
+        title: 'Some other title',
+        description: 'Some other description',
+        address: {
+          street: '123 Main St',
+          city: 'Anytown',
+          state: 'NY',
+          zip: 12345,
+          country: 'USA',
+        },
+        additionalAddresses: [
+          {
+            street: '456 Elm St',
+            city: 'Anytown',
+            state: 69,
+            zip: 12345,
             country: 'USA',
           },
-          ...value,
-        ]);
-
-        hydrateStore(store, snapshot);
-
-        expect(store.name).toBe(snapshot.name);
-        expect(store.age).toBe(snapshot.age);
-        expect(store.score).toBe(snapshot.score);
-        expect(store.weight).toBe(snapshot.weight);
-        expect(store.balabnce).toBe(snapshot.balabnce);
-        expect(store.premium).toBe(snapshot.premium);
-        expect(store.birthDate).toStrictEqual(JaneBirthDate);
-        expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-        expect(store.testNull).toBeNull();
-        expect(store.testUndefined).toBeUndefined();
-        expect(store.title).toBe(snapshot.title);
-        expect(store.description).toBe(snapshot.description);
-        expect(store.address).toStrictEqual(snapshot.address);
-        expect(store.additionalAddresses).toStrictEqual([
           {
             street: '456 Elm St',
             city: 'Anytown',
@@ -1296,18 +245,33 @@ describe('hydrate store', () => {
             country: 'USA',
           },
           {
-            street: '789 Oak St',
+            street: null,
             city: 'Anytown',
             state: 'NY',
             zip: 12345,
-            country: 'USA',
+            country: 7,
           },
-        ]);
-        expect(store.profile.firstName).toBe(snapshot.profile.firstName);
-        expect(store.profile.lastName).toBe(snapshot.profile.lastName);
-        expect(store.features).toStrictEqual(snapshot.features);
-        expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
-      });
+        ],
+        profile: {
+          firstName: 'Jane',
+          lastName: 'Darlene',
+        },
+        features: ['One', 'Two', 'Three'],
+        favorites: [
+          { slug: 'first', postname: 'First post' },
+          { slug: 'second', postname: 'Second post' },
+        ],
+        todos: {
+          1: { id: 1, text: 'First todo', done: false },
+          2: { id: 2, text: 'Second todo', done: true },
+        },
+      };
+
+      hydrateStore(testStoreModel, store, snapshot);
+
+      expect(store.additionalAddresses).not.toBeUndefined();
+      expect(store.additionalAddresses).toHaveLength(2);
+      expect(store.favorites).toHaveLength(1);
     });
   });
 });

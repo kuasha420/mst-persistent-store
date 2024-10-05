@@ -4,63 +4,58 @@ import {
   getSnapshot,
   getType,
   IAnyModelType,
+  IAnyType,
   Instance,
   isArrayType,
+  isIdentifierType,
   isMapType,
-  isModelType,
   isOptionalType,
+  isPrimitiveType,
   SnapshotIn,
   tryResolve,
 } from 'mobx-state-tree';
-import isObject from 'src/utils/is-object';
+import { IValidationResult } from 'mobx-state-tree/dist/internal';
+import isObject from '../utils/is-object';
 
-const mstPrimitiveTypes = ['string', 'number', 'integer', 'float', 'finite', 'boolean', 'Date'];
+interface PathObject {
+  path: string;
+  type: IAnyType;
+  pathSegments: string[];
+  isNested: boolean;
+}
 
-const pathRegExp = new RegExp('at path "([^"]+)"');
-const typeRegExp = new RegExp('type: `([^`]+)`');
+interface NearestParent {
+  nearestParentPath: string;
+  childPath: string;
+  type: IAnyType;
+}
 
-const transformErrorsToObjects = (message: string) => {
-  const errors = message
-    .split('\n')
-    .filter((line) => line.includes('at path'))
-    .map((line) => line.trim());
+interface TreeNode {
+  value: PathObject | null;
+  nodes: Map<string, TreeNode>;
+}
 
-  const formattedErrors = errors.map((error) => {
-    const path = error.match(pathRegExp)?.[1];
-    const typeString = error.match(typeRegExp)?.[1];
+interface TreeNodeWithValue {
+  value: PathObject;
+  nodes: Map<string, TreeNode>;
+}
 
-    if (!path || !typeString) {
-      throw new Error('Invalid error message');
-    }
-
-    // It is a nested path if the path has more than one / character.
-    const pathSegments = path.split('/');
+const transformErrorsToObjects = (errors: IValidationResult): PathObject[] => {
+  return errors.map((error) => {
+    const value = error.value;
+    const type = error.context[error.context.length - 1].type;
+    const pathSegments = error.context.map(({ path }) => path);
+    const path = pathSegments.join('/');
     const isNested = pathSegments.length > 2;
-
-    const types = typeString.includes('|')
-      ? typeString.replace(new RegExp('\\(|\\)', 'g'), '').split(' | ')
-      : [typeString];
 
     return {
       path,
-      types,
-      isNested,
       pathSegments,
+      value,
+      type,
+      isNested,
     };
   });
-
-  const errorsDedupSet = new Set<string>();
-  const dedupedErrors = formattedErrors
-    .sort((a, b) => b.path.localeCompare(a.path))
-    .filter((error) => {
-      if (errorsDedupSet.has(error.path)) {
-        return false;
-      }
-      errorsDedupSet.add(error.path);
-      return true;
-    });
-
-  return dedupedErrors;
 };
 
 const removeEmptyItemsRecursively = (obj: any): any => {
@@ -79,16 +74,110 @@ const removeEmptyItemsRecursively = (obj: any): any => {
   }
 };
 
-interface NearestParent {
-  nearestParentNode: IAnyModelType;
-  nearestParentPath: string;
-  childPath: string;
+const buildTree = (paths: PathObject[]): TreeNode => {
+  const tree: TreeNode = { value: null, nodes: new Map() };
+
+  for (const pathObj of paths) {
+    let currentNode: TreeNode = tree;
+    const segments = pathObj.pathSegments;
+
+    for (let i = 1; i < segments.length; i++) {
+      const segment = segments[i];
+      let nextNode = currentNode.nodes.get(segment);
+
+      if (!nextNode) {
+        nextNode = { value: null, nodes: new Map() };
+        currentNode.nodes.set(segment, nextNode);
+      }
+      currentNode = nextNode;
+    }
+
+    currentNode.value = pathObj;
+  }
+
+  return tree;
+};
+
+const reverseDepthFirstTraversal = (
+  tree: TreeNode,
+  callback: (node: TreeNodeWithValue) => void,
+  visited = new Set<TreeNode>()
+) => {
+  if (tree === null || visited.has(tree)) {
+    return;
+  }
+  visited.add(tree);
+
+  const keys = Array.from(tree.nodes.keys()).reverse(); // Get keys and reverse
+  for (const key of keys) {
+    reverseDepthFirstTraversal(tree.nodes.get(key)!, callback, visited);
+  }
+
+  if (tree.value) {
+    callback(tree as TreeNodeWithValue);
+  }
+};
+
+function findParent(node: TreeNode, tree: TreeNode): TreeNode | undefined {
+  const queue: TreeNode[] = [tree];
+  const visited = new Set<TreeNode>(); // Keep track of visited nodes
+
+  while (queue.length > 0) {
+    const currentNode = queue.shift()!;
+
+    if (visited.has(currentNode)) {
+      // Detect cycles
+      continue;
+    }
+    visited.add(currentNode);
+
+    for (const [, childNode] of currentNode.nodes) {
+      if (childNode === node) {
+        return currentNode;
+      }
+      queue.push(childNode);
+    }
+  }
+  return undefined;
+}
+
+function findNearestParentWithValue(node: TreeNode, tree: TreeNode): NearestParent | null {
+  if (node === tree) {
+    return null;
+  }
+
+  let parentNode: TreeNode | undefined = node;
+  let childNode: TreeNode = node;
+  const visited = new Set<TreeNode>(); // Keep track of visited nodes
+
+  while (parentNode) {
+    parentNode = findParent(parentNode, tree);
+    if (parentNode) {
+      if (parentNode.value) {
+        return {
+          nearestParentPath: parentNode.value.path,
+          childPath: childNode.value!.path,
+          type: parentNode.value.type,
+        };
+      }
+      if (visited.has(parentNode)) {
+        // Detect cycles to prevent infinite loops
+        return null;
+      }
+      childNode = parentNode;
+      visited.add(parentNode);
+    }
+  }
+
+  return null;
 }
 
 const tryResolveNearestExistingParent = (
-  store: IAnyModelType,
+  store: Instance<IAnyModelType>,
   pathSegments: string[],
-  path: string
+  path: string,
+  node?: TreeNode,
+  tree?: TreeNode
 ): NearestParent | null => {
   let childPath = path;
   for (let i = pathSegments.length - 1; i > 0; i--) {
@@ -102,112 +191,154 @@ const tryResolveNearestExistingParent = (
     const node = tryResolve(store, path);
 
     if (node) {
-      return { nearestParentNode: node, nearestParentPath: path, childPath };
+      const type = getType(node);
+      return { nearestParentPath: path, childPath, type };
     }
 
     childPath = path;
   }
 
+  if (node && tree) {
+    const nearestParent = findNearestParentWithValue(node, tree);
+
+    if (nearestParent) {
+      return nearestParent;
+    }
+  }
+
   return null;
 };
 
-const hydrateStore = <T extends IAnyModelType>(store: Instance<T>, snapshot: SnapshotIn<T>) => {
+const hydrateStore = <T extends IAnyModelType>(
+  model: IAnyModelType,
+  store: Instance<T>,
+  snapshot: SnapshotIn<T>
+) => {
   try {
     applySnapshot(store, snapshot);
   } catch (error) {
     if (error instanceof Error && error.message.startsWith('[mobx-state-tree]')) {
       const storeSnapshot = getSnapshot<SnapshotIn<T>>(store);
 
-      const errors = transformErrorsToObjects(error.message);
+      const validationErrors = model.validate(snapshot, [{ path: '', type: model }]);
 
-      console.debug('Errors while hydrating store', errors);
+      const errors = transformErrorsToObjects(validationErrors);
 
-      const newSnapshot: SnapshotIn<T> = JSON.parse(JSON.stringify(snapshot));
+      const tree = buildTree(errors);
 
-      const processedPaths = new Set<string>();
+      reverseDepthFirstTraversal(tree, (error) => {
+        const nearestParent = tryResolveNearestExistingParent(
+          store,
+          error.value.pathSegments,
+          error.value.path,
+          error,
+          tree
+        );
 
-      const handleNestedErrorHydration = (pathSegments: string[], path: string) => {
-        // If the parent path is not processed, we need to handle
-        // the parent types for the model, array, and map types.
-        // For other types, the logic is same as the non-nested paths.
-        const nearestParent = tryResolveNearestExistingParent(store, pathSegments, path);
-
-        if (nearestParent) {
-          const parentNodeType = getType(nearestParent.nearestParentNode);
-
-          if (isArrayType(parentNodeType)) {
-            // If the parent node is an array type, Remove the item from the array
-            remove(nearestParent.childPath, newSnapshot);
-            processedPaths.add(nearestParent.childPath);
-          } else if (isMapType(parentNodeType)) {
-            // If the parent node is a map type, Remove the key from the map
-            remove(nearestParent.childPath, newSnapshot);
-            processedPaths.add(nearestParent.childPath);
-          } else if (isModelType(parentNodeType)) {
-            // if the parent node is optional, we should remove this from the snapshot
-            if (isOptionalType(parentNodeType)) {
-              remove(nearestParent.nearestParentPath, newSnapshot);
-              processedPaths.add(nearestParent.nearestParentPath);
-              processedPaths.add(nearestParent.childPath);
-            } else {
-              try {
-                assign(nearestParent.nearestParentPath, newSnapshot, {
-                  ...(get(nearestParent.nearestParentPath, storeSnapshot) as Record<
-                    string,
-                    unknown
-                  >),
-                  ...(get(nearestParent.nearestParentPath, newSnapshot) as Record<string, unknown>),
-                });
-                processedPaths.add(nearestParent.childPath);
-              } catch (error) {
-                console.debug('Error while hydrating nested path', nearestParent, error);
-              }
-            }
-          }
-        }
-      };
-
-      errors.forEach(({ path, pathSegments, types, isNested }) => {
-        // If the type is nullable, replace the value with corresponding nullable type
-        if (types.includes('null')) {
-          assign(path, newSnapshot, null);
-          processedPaths.add(path);
-          return;
-        }
-        if (types.includes('undefined')) {
-          remove(path, newSnapshot);
-          processedPaths.add(path);
-          return;
-        }
-
-        // For nested paths
-        if (isNested) {
-          // Do not process if the parent path is already processed
-          const parentPath = path.split('/').slice(0, -1).join('/');
-          if (processedPaths.has(parentPath)) {
-            processedPaths.add(path);
-            return;
-          }
-
-          return handleNestedErrorHydration(pathSegments, path);
-        }
-
-        // If the type is a primitive type, replace the value with default value
-        if (types.some((type) => mstPrimitiveTypes.includes(type))) {
-          assign(path, newSnapshot, get(path, storeSnapshot));
-          processedPaths.add(path);
-          return;
-        }
-
-        // If the type is not nullable and not a primitive type, it is a required complex type
-        // Replace the value with default value.
-        assign(path, newSnapshot, get(path, storeSnapshot));
-        processedPaths.add(path);
+        console.debug(
+          'Nearest parent at path: ',
+          nearestParent?.nearestParentPath,
+          'found for child at path: ',
+          nearestParent?.childPath,
+          'with initial error path: ',
+          error.value.path
+        );
       });
 
-      const finalSnapshot = removeEmptyItemsRecursively(newSnapshot);
+      // const newSnapshot: SnapshotIn<T> = JSON.parse(JSON.stringify(snapshot));
 
-      applySnapshot(store, finalSnapshot);
+      // const processedPaths = new Set<string>();
+
+      // // We need to process the paths in reverse order to avoid processing a child before its parent.
+      // // Also, processing the child may fix the issues with the parent. We need to verify this.
+      // reverseDepthFirstTraversal(tree, (error) => {
+      //   // If the exact path or its child path is already processed,
+      //   // We should try to revalidate the path to see if the issue is fixed.
+      //   if (
+      //     Array.from(processedPaths).some((processedPath) =>
+      //       processedPath.startsWith(error.value.path)
+      //     )
+      //   ) {
+      //     const valueAtPath = get(error.value.path, newSnapshot);
+      //     console.debug(valueAtPath);
+      //     const revalidationErrors = error.value.type.validate(valueAtPath, [
+      //       { path: '', type: error.value.type },
+      //     ]);
+
+      //     if (revalidationErrors.length === 0) {
+      //       processedPaths.add(error.value.path);
+      //       return;
+      //     }
+      //   }
+      //   // For nested paths
+      //   if (error.value.isNested) {
+      //     // If the error is for a primitive type or an identifier type
+      //     if (isPrimitiveType(error.value.type) || isIdentifierType(error.value.type)) {
+      //       // If the type is optional, update the snapshot with its
+      //       // optional value.
+      //       if (isOptionalType(error.value.type)) {
+      //         // Calling create on an optional type will return the default value.
+      //         const defaultValue = error.value.type.create();
+      //         assign(error.value.path, newSnapshot, defaultValue);
+      //       } else {
+      //         // If the type is not optional
+      //         // Find the nearest parent node
+      //         const nearestParent = tryResolveNearestExistingParent(
+      //           store,
+      //           error.value.pathSegments,
+      //           error.value.path,
+      //           error,
+      //           tree
+      //         );
+
+      //         // If the nearest parent is found
+      //         if (nearestParent) {
+      //           // If the nearest parent is a map or array type.
+      //           // Remove the child path from the snapshot.
+      //           if (isMapType(nearestParent.type) || isArrayType(nearestParent.type)) {
+      //             remove(nearestParent.childPath, newSnapshot);
+      //           } else {
+      //             // If the nearest parent is a model type,
+      //             // If the parent is optional, update the snapshot with its optional value.
+      //             if (isOptionalType(nearestParent.type)) {
+      //               // Calling create on an optional type will return the default value.
+      //               const defaultValue = nearestParent.type.create();
+      //               assign(nearestParent.nearestParentPath, newSnapshot, defaultValue);
+      //             } else {
+      //               // Otherwise, it should exist in the initial snapshot.
+      //               // Replace the value of the nearest parent with the value from the initial snapshot.
+      //               const nearestParentValue = get(nearestParent.nearestParentPath, storeSnapshot);
+      //               assign(nearestParent.nearestParentPath, newSnapshot, nearestParentValue);
+      //             }
+      //             processedPaths.add(nearestParent.nearestParentPath);
+      //           }
+      //           processedPaths.add(nearestParent.childPath);
+      //         } else {
+      //           // If the nearest parent is not found, remove the child path from the snapshot.
+      //           // It should be an optional type.
+      //           remove(error.value.path, newSnapshot);
+      //         }
+      //       }
+      //     }
+      //   } else {
+      //     // If the field is optional, update the snapshot with its optional value.
+      //     if (isOptionalType(error.value.type)) {
+      //       // Calling create on an optional type will return the default value.
+      //       const defaultValue = error.value.type.create();
+      //       assign(error.value.path, newSnapshot, defaultValue);
+      //     } else {
+      //       // If the field is not optional, it should exist in the initial snapshot.
+      //       // Replace the value with the value from the initial snapshot.
+      //       const value = get(error.value.path, storeSnapshot);
+      //       assign(error.value.path, newSnapshot, value);
+      //     }
+      //   }
+      //   processedPaths.add(error.value.path);
+      // });
+
+      // const finalSnapshot = removeEmptyItemsRecursively(newSnapshot);
+
+      // applySnapshot(store, finalSnapshot);
     }
   }
 };
