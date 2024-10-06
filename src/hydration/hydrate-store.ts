@@ -7,10 +7,9 @@ import {
   IAnyType,
   Instance,
   isArrayType,
-  isIdentifierType,
   isMapType,
   isOptionalType,
-  isPrimitiveType,
+  isStateTreeNode,
   SnapshotIn,
   tryResolve,
 } from 'mobx-state-tree';
@@ -206,6 +205,14 @@ const tryResolveNearestExistingParent = (
   return null;
 };
 
+const createDefaultValue = (type: IAnyType): any => {
+  const defaultValue = type.create();
+  if (isStateTreeNode(defaultValue)) {
+    return getSnapshot(defaultValue);
+  }
+  return defaultValue;
+};
+
 const hydrateStore = <T extends IAnyModelType>(
   model: IAnyModelType,
   store: Instance<T>,
@@ -238,7 +245,6 @@ const hydrateStore = <T extends IAnyModelType>(
           )
         ) {
           const valueAtPath = get(error.value.path, newSnapshot);
-          console.debug(valueAtPath);
           const revalidationErrors = error.value.type.validate(valueAtPath, [
             { path: '', type: error.value.type },
           ]);
@@ -250,59 +256,56 @@ const hydrateStore = <T extends IAnyModelType>(
         }
         // For nested paths
         if (error.value.isNested) {
-          // If the error is for a primitive type or an identifier type
-          if (isPrimitiveType(error.value.type) || isIdentifierType(error.value.type)) {
-            // If the type is optional, update the snapshot with its
-            // optional value.
-            if (isOptionalType(error.value.type)) {
-              // Calling create on an optional type will return the default value.
-              const defaultValue = error.value.type.create();
-              assign(error.value.path, newSnapshot, defaultValue);
-            } else {
-              // If the type is not optional
-              // Find the nearest parent node
-              const nearestParent = tryResolveNearestExistingParent(
-                store,
-                error.value.pathSegments,
-                error.value.path,
-                error,
-                tree
-              );
+          // If the type is optional, update the snapshot with its
+          // optional value.
+          if (isOptionalType(error.value.type)) {
+            // Calling create on an optional type will return the default value.
+            const defaultValue = createDefaultValue(error.value.type);
+            assign(error.value.path, newSnapshot, defaultValue);
+          } else {
+            // If the type is not optional
+            // Find the nearest parent node
+            const nearestParent = tryResolveNearestExistingParent(
+              store,
+              error.value.pathSegments,
+              error.value.path,
+              error,
+              tree
+            );
 
-              // If the nearest parent is found
-              if (nearestParent) {
-                // If the nearest parent is a map or array type.
-                // Remove the child path from the snapshot.
-                if (isMapType(nearestParent.type) || isArrayType(nearestParent.type)) {
-                  remove(nearestParent.childPath, newSnapshot);
-                } else {
-                  // If the nearest parent is a model type,
-                  // If the parent is optional, update the snapshot with its optional value.
-                  if (isOptionalType(nearestParent.type)) {
-                    // Calling create on an optional type will return the default value.
-                    const defaultValue = nearestParent.type.create();
-                    assign(nearestParent.nearestParentPath, newSnapshot, defaultValue);
-                  } else {
-                    // Otherwise, it should exist in the initial snapshot.
-                    // Replace the value of the nearest parent with the value from the initial snapshot.
-                    const nearestParentValue = get(nearestParent.nearestParentPath, storeSnapshot);
-                    assign(nearestParent.nearestParentPath, newSnapshot, nearestParentValue);
-                  }
-                  processedPaths.add(nearestParent.nearestParentPath);
-                }
-                processedPaths.add(nearestParent.childPath);
+            // If the nearest parent is found
+            if (nearestParent) {
+              // If the nearest parent is a map or array type.
+              // Remove the child path from the snapshot.
+              if (isMapType(nearestParent.type) || isArrayType(nearestParent.type)) {
+                remove(nearestParent.childPath, newSnapshot);
               } else {
-                // If the nearest parent is not found, remove the child path from the snapshot.
-                // It should be an optional type.
-                remove(error.value.path, newSnapshot);
+                // If the nearest parent is a model type,
+                // If the parent is optional, update the snapshot with its optional value.
+                if (isOptionalType(nearestParent.type)) {
+                  // Calling create on an optional type will return the default value.
+                  const defaultValue = createDefaultValue(nearestParent.type);
+                  assign(nearestParent.nearestParentPath, newSnapshot, defaultValue);
+                } else {
+                  // Otherwise, it should exist in the initial snapshot.
+                  // Replace the value of the nearest parent with the value from the initial snapshot.
+                  const nearestParentValue = get(nearestParent.nearestParentPath, storeSnapshot);
+                  assign(nearestParent.nearestParentPath, newSnapshot, nearestParentValue);
+                }
+                processedPaths.add(nearestParent.nearestParentPath);
               }
+              processedPaths.add(nearestParent.childPath);
+            } else {
+              // If the nearest parent is not found, remove the child path from the snapshot.
+              // It should be an optional type.
+              remove(error.value.path, newSnapshot);
             }
           }
         } else {
           // If the field is optional, update the snapshot with its optional value.
           if (isOptionalType(error.value.type)) {
             // Calling create on an optional type will return the default value.
-            const defaultValue = error.value.type.create();
+            const defaultValue = createDefaultValue(error.value.type);
             assign(error.value.path, newSnapshot, defaultValue);
           } else {
             // If the field is not optional, it should exist in the initial snapshot.
