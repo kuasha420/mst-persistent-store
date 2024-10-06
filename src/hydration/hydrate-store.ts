@@ -40,7 +40,6 @@ interface TreeNodeWithValue extends TreeNode {
 
 const transformErrorsToObjects = (errors: IValidationResult): PathObject[] => {
   return errors.map((error) => {
-    const value = error.value;
     const type = error.context[error.context.length - 1].type;
     const pathSegments = error.context.map(({ path }) => path);
     const path = pathSegments.join('/');
@@ -49,7 +48,6 @@ const transformErrorsToObjects = (errors: IValidationResult): PathObject[] => {
     return {
       path,
       pathSegments,
-      value,
       type,
       isNested,
     };
