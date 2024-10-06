@@ -35,9 +35,8 @@ interface TreeNode {
   nodes: Map<string, TreeNode>;
 }
 
-interface TreeNodeWithValue {
+interface TreeNodeWithValue extends TreeNode {
   value: PathObject;
-  nodes: Map<string, TreeNode>;
 }
 
 const transformErrorsToObjects = (errors: IValidationResult): PathObject[] => {
@@ -141,13 +140,13 @@ function findParent(node: TreeNode, tree: TreeNode): TreeNode | undefined {
   return undefined;
 }
 
-function findNearestParentWithValue(node: TreeNode, tree: TreeNode): NearestParent | null {
+function findNearestParentWithValue(node: TreeNodeWithValue, tree: TreeNode): NearestParent | null {
   if (node === tree) {
     return null;
   }
 
   let parentNode: TreeNode | undefined = node;
-  let childNode: TreeNode = node;
+  let childPath = node.value.path;
   const visited = new Set<TreeNode>(); // Keep track of visited nodes
 
   while (parentNode) {
@@ -156,7 +155,7 @@ function findNearestParentWithValue(node: TreeNode, tree: TreeNode): NearestPare
       if (parentNode.value) {
         return {
           nearestParentPath: parentNode.value.path,
-          childPath: childNode.value!.path,
+          childPath,
           type: parentNode.value.type,
         };
       }
@@ -164,8 +163,8 @@ function findNearestParentWithValue(node: TreeNode, tree: TreeNode): NearestPare
         // Detect cycles to prevent infinite loops
         return null;
       }
-      childNode = parentNode;
       visited.add(parentNode);
+      childPath = childPath.split('/').slice(0, -1).join('/');
     }
   }
 
@@ -176,9 +175,15 @@ const tryResolveNearestExistingParent = (
   store: Instance<IAnyModelType>,
   pathSegments: string[],
   path: string,
-  node?: TreeNode,
-  tree?: TreeNode
+  node: TreeNodeWithValue,
+  tree: TreeNode
 ): NearestParent | null => {
+  const nearestParent = findNearestParentWithValue(node, tree);
+
+  if (nearestParent) {
+    return nearestParent;
+  }
+
   let childPath = path;
   for (let i = pathSegments.length - 1; i > 0; i--) {
     const path = pathSegments.slice(0, i).join('/');
@@ -196,14 +201,6 @@ const tryResolveNearestExistingParent = (
     }
 
     childPath = path;
-  }
-
-  if (node && tree) {
-    const nearestParent = findNearestParentWithValue(node, tree);
-
-    if (nearestParent) {
-      return nearestParent;
-    }
   }
 
   return null;
@@ -226,119 +223,100 @@ const hydrateStore = <T extends IAnyModelType>(
 
       const tree = buildTree(errors);
 
-      reverseDepthFirstTraversal(tree, (error) => {
-        const nearestParent = tryResolveNearestExistingParent(
-          store,
-          error.value.pathSegments,
-          error.value.path,
-          error,
-          tree
-        );
+      const newSnapshot: SnapshotIn<T> = JSON.parse(JSON.stringify(snapshot));
 
-        console.debug(
-          'Nearest parent at path: ',
-          nearestParent?.nearestParentPath,
-          'found for child at path: ',
-          nearestParent?.childPath,
-          'with initial error path: ',
-          error.value.path
-        );
+      const processedPaths = new Set<string>();
+
+      // We need to process the paths in reverse order to avoid processing a child before its parent.
+      // Also, processing the child may fix the issues with the parent. We need to verify this.
+      reverseDepthFirstTraversal(tree, (error) => {
+        // If the exact path or its child path is already processed,
+        // We should try to revalidate the path to see if the issue is fixed.
+        if (
+          Array.from(processedPaths).some((processedPath) =>
+            processedPath.startsWith(error.value.path)
+          )
+        ) {
+          const valueAtPath = get(error.value.path, newSnapshot);
+          console.debug(valueAtPath);
+          const revalidationErrors = error.value.type.validate(valueAtPath, [
+            { path: '', type: error.value.type },
+          ]);
+
+          if (revalidationErrors.length === 0) {
+            processedPaths.add(error.value.path);
+            return;
+          }
+        }
+        // For nested paths
+        if (error.value.isNested) {
+          // If the error is for a primitive type or an identifier type
+          if (isPrimitiveType(error.value.type) || isIdentifierType(error.value.type)) {
+            // If the type is optional, update the snapshot with its
+            // optional value.
+            if (isOptionalType(error.value.type)) {
+              // Calling create on an optional type will return the default value.
+              const defaultValue = error.value.type.create();
+              assign(error.value.path, newSnapshot, defaultValue);
+            } else {
+              // If the type is not optional
+              // Find the nearest parent node
+              const nearestParent = tryResolveNearestExistingParent(
+                store,
+                error.value.pathSegments,
+                error.value.path,
+                error,
+                tree
+              );
+
+              // If the nearest parent is found
+              if (nearestParent) {
+                // If the nearest parent is a map or array type.
+                // Remove the child path from the snapshot.
+                if (isMapType(nearestParent.type) || isArrayType(nearestParent.type)) {
+                  remove(nearestParent.childPath, newSnapshot);
+                } else {
+                  // If the nearest parent is a model type,
+                  // If the parent is optional, update the snapshot with its optional value.
+                  if (isOptionalType(nearestParent.type)) {
+                    // Calling create on an optional type will return the default value.
+                    const defaultValue = nearestParent.type.create();
+                    assign(nearestParent.nearestParentPath, newSnapshot, defaultValue);
+                  } else {
+                    // Otherwise, it should exist in the initial snapshot.
+                    // Replace the value of the nearest parent with the value from the initial snapshot.
+                    const nearestParentValue = get(nearestParent.nearestParentPath, storeSnapshot);
+                    assign(nearestParent.nearestParentPath, newSnapshot, nearestParentValue);
+                  }
+                  processedPaths.add(nearestParent.nearestParentPath);
+                }
+                processedPaths.add(nearestParent.childPath);
+              } else {
+                // If the nearest parent is not found, remove the child path from the snapshot.
+                // It should be an optional type.
+                remove(error.value.path, newSnapshot);
+              }
+            }
+          }
+        } else {
+          // If the field is optional, update the snapshot with its optional value.
+          if (isOptionalType(error.value.type)) {
+            // Calling create on an optional type will return the default value.
+            const defaultValue = error.value.type.create();
+            assign(error.value.path, newSnapshot, defaultValue);
+          } else {
+            // If the field is not optional, it should exist in the initial snapshot.
+            // Replace the value with the value from the initial snapshot.
+            const value = get(error.value.path, storeSnapshot);
+            assign(error.value.path, newSnapshot, value);
+          }
+        }
+        processedPaths.add(error.value.path);
       });
 
-      // const newSnapshot: SnapshotIn<T> = JSON.parse(JSON.stringify(snapshot));
+      const finalSnapshot = removeEmptyItemsRecursively(newSnapshot);
 
-      // const processedPaths = new Set<string>();
-
-      // // We need to process the paths in reverse order to avoid processing a child before its parent.
-      // // Also, processing the child may fix the issues with the parent. We need to verify this.
-      // reverseDepthFirstTraversal(tree, (error) => {
-      //   // If the exact path or its child path is already processed,
-      //   // We should try to revalidate the path to see if the issue is fixed.
-      //   if (
-      //     Array.from(processedPaths).some((processedPath) =>
-      //       processedPath.startsWith(error.value.path)
-      //     )
-      //   ) {
-      //     const valueAtPath = get(error.value.path, newSnapshot);
-      //     console.debug(valueAtPath);
-      //     const revalidationErrors = error.value.type.validate(valueAtPath, [
-      //       { path: '', type: error.value.type },
-      //     ]);
-
-      //     if (revalidationErrors.length === 0) {
-      //       processedPaths.add(error.value.path);
-      //       return;
-      //     }
-      //   }
-      //   // For nested paths
-      //   if (error.value.isNested) {
-      //     // If the error is for a primitive type or an identifier type
-      //     if (isPrimitiveType(error.value.type) || isIdentifierType(error.value.type)) {
-      //       // If the type is optional, update the snapshot with its
-      //       // optional value.
-      //       if (isOptionalType(error.value.type)) {
-      //         // Calling create on an optional type will return the default value.
-      //         const defaultValue = error.value.type.create();
-      //         assign(error.value.path, newSnapshot, defaultValue);
-      //       } else {
-      //         // If the type is not optional
-      //         // Find the nearest parent node
-      //         const nearestParent = tryResolveNearestExistingParent(
-      //           store,
-      //           error.value.pathSegments,
-      //           error.value.path,
-      //           error,
-      //           tree
-      //         );
-
-      //         // If the nearest parent is found
-      //         if (nearestParent) {
-      //           // If the nearest parent is a map or array type.
-      //           // Remove the child path from the snapshot.
-      //           if (isMapType(nearestParent.type) || isArrayType(nearestParent.type)) {
-      //             remove(nearestParent.childPath, newSnapshot);
-      //           } else {
-      //             // If the nearest parent is a model type,
-      //             // If the parent is optional, update the snapshot with its optional value.
-      //             if (isOptionalType(nearestParent.type)) {
-      //               // Calling create on an optional type will return the default value.
-      //               const defaultValue = nearestParent.type.create();
-      //               assign(nearestParent.nearestParentPath, newSnapshot, defaultValue);
-      //             } else {
-      //               // Otherwise, it should exist in the initial snapshot.
-      //               // Replace the value of the nearest parent with the value from the initial snapshot.
-      //               const nearestParentValue = get(nearestParent.nearestParentPath, storeSnapshot);
-      //               assign(nearestParent.nearestParentPath, newSnapshot, nearestParentValue);
-      //             }
-      //             processedPaths.add(nearestParent.nearestParentPath);
-      //           }
-      //           processedPaths.add(nearestParent.childPath);
-      //         } else {
-      //           // If the nearest parent is not found, remove the child path from the snapshot.
-      //           // It should be an optional type.
-      //           remove(error.value.path, newSnapshot);
-      //         }
-      //       }
-      //     }
-      //   } else {
-      //     // If the field is optional, update the snapshot with its optional value.
-      //     if (isOptionalType(error.value.type)) {
-      //       // Calling create on an optional type will return the default value.
-      //       const defaultValue = error.value.type.create();
-      //       assign(error.value.path, newSnapshot, defaultValue);
-      //     } else {
-      //       // If the field is not optional, it should exist in the initial snapshot.
-      //       // Replace the value with the value from the initial snapshot.
-      //       const value = get(error.value.path, storeSnapshot);
-      //       assign(error.value.path, newSnapshot, value);
-      //     }
-      //   }
-      //   processedPaths.add(error.value.path);
-      // });
-
-      // const finalSnapshot = removeEmptyItemsRecursively(newSnapshot);
-
-      // applySnapshot(store, finalSnapshot);
+      applySnapshot(store, finalSnapshot);
     }
   }
 };

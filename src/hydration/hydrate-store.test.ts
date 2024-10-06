@@ -211,62 +211,6 @@ describe('hydrate store', () => {
         },
       };
 
-      const snapshot2 = {
-        name: 'Jane Darlene',
-        age: 25,
-        score: 120,
-        weight: 65.5,
-        balabnce: 2000.0,
-        premium: false,
-        birthDate: JaneBirthDateMilliseconds,
-        testNull: null,
-        title: 'Some other title',
-        description: 'Some other description',
-        address: {
-          street: '123 Main St',
-          city: 'Anytown',
-          state: 'NY',
-          zip: 12345,
-          country: 'USA',
-        },
-        additionalAddresses: [
-          {
-            street: '456 Elm St',
-            city: 'Anytown',
-            state: 69,
-            zip: 12345,
-            country: 'USA',
-          },
-          {
-            street: '456 Elm St',
-            city: 'Anytown',
-            state: 'NY',
-            zip: 12345,
-            country: 'USA',
-          },
-          {
-            street: null,
-            city: 'Anytown',
-            state: 'NY',
-            zip: 12345,
-            country: 7,
-          },
-        ],
-        profile: {
-          firstName: 'Jane',
-          lastName: 'Darlene',
-        },
-        features: ['One', 'Two', 'Three'],
-        favorites: [
-          { slug: 'first', postname: 'First post' },
-          { slug: 'second', postname: 'Second post' },
-        ],
-        todos: {
-          1: { id: 1, text: 'First todo', done: false },
-          2: { id: 2, text: 'Second todo', done: true },
-        },
-      };
-
       hydrateStore(testStoreModel, store, snapshot);
 
       expect(store.additionalAddresses).not.toBeUndefined();
