@@ -2,52 +2,33 @@ import { describe, expect, it } from 'vitest';
 import deepObjectOverride from './deep-object-override';
 
 describe('deepObjectOverride', () => {
-  it('should return the original object if no overrides are provided', () => {
-    const original = {
-      string: 'string',
-      number: 1,
-      boolean: true,
-      object: {
-        keyOne: 'value',
-        keyTwo: 2,
-        keyThree: ['one', 'two', 'three'],
-      },
-      deeplyNested: {
-        keyOne: {
-          keyTwo: {
-            keyThree: {
-              keyFour: 'value',
-            },
+  const original = {
+    string: 'string',
+    number: 1,
+    boolean: true,
+    object: {
+      keyOne: 'value',
+      keyTwo: 2,
+      keyThree: ['one', 'two', 'three'],
+    },
+    deeplyNested: {
+      keyOne: {
+        keyTwo: {
+          keyThree: {
+            keyFour: 'value',
           },
         },
       },
-      array: [1, 2, 3],
-    };
+    },
+    array: [1, 2, 3],
+  };
+
+  it('should return the original object if no overrides are provided', () => {
     const result = deepObjectOverride(original);
     expect(result).toBe(original); // It should be the same object reference
   });
 
   it('should override simple properties', () => {
-    const original = {
-      string: 'string',
-      number: 1,
-      boolean: true,
-      object: {
-        keyOne: 'value',
-        keyTwo: 2,
-        keyThree: ['one', 'two', 'three'],
-      },
-      deeplyNested: {
-        keyOne: {
-          keyTwo: {
-            keyThree: {
-              keyFour: 'value',
-            },
-          },
-        },
-      },
-      array: [1, 2, 3],
-    };
     const overrides = {
       string: 'new string',
       number: 2,
@@ -78,26 +59,6 @@ describe('deepObjectOverride', () => {
   });
 
   it('should deeply override nested objects', () => {
-    const original = {
-      string: 'string',
-      number: 1,
-      boolean: true,
-      object: {
-        keyOne: 'value',
-        keyTwo: 2,
-        keyThree: ['one', 'two', 'three'],
-      },
-      deeplyNested: {
-        keyOne: {
-          keyTwo: {
-            keyThree: {
-              keyFour: 'value',
-            },
-          },
-        },
-      },
-      array: [1, 2, 3],
-    };
     const overrides = {
       object: {
         keyOne: 'new value',
@@ -130,26 +91,6 @@ describe('deepObjectOverride', () => {
   });
 
   it('should handle arrays within objects', () => {
-    const original = {
-      string: 'string',
-      number: 1,
-      boolean: true,
-      object: {
-        keyOne: 'value',
-        keyTwo: 2,
-        keyThree: ['one', 'two', 'three'],
-      },
-      deeplyNested: {
-        keyOne: {
-          keyTwo: {
-            keyThree: {
-              keyFour: 'value',
-            },
-          },
-        },
-      },
-      array: [1, 2, 3],
-    };
     const overrides = {
       object: {
         keyThree: ['four', 'five'],
@@ -180,26 +121,6 @@ describe('deepObjectOverride', () => {
   });
 
   it('should handle deeply nested arrays and objects', () => {
-    const original = {
-      string: 'string',
-      number: 1,
-      boolean: true,
-      object: {
-        keyOne: 'value',
-        keyTwo: 2,
-        keyThree: ['one', 'two', 'three'],
-      },
-      deeplyNested: {
-        keyOne: {
-          keyTwo: {
-            keyThree: {
-              keyFour: 'value',
-            },
-          },
-        },
-      },
-      array: [1, 2, 3],
-    };
     const overrides = {
       deeplyNested: {
         keyOne: {
@@ -236,26 +157,6 @@ describe('deepObjectOverride', () => {
   });
 
   it('should replace the original value with an empty object if the override value is an empty object', () => {
-    const original = {
-      string: 'string',
-      number: 1,
-      boolean: true,
-      object: {
-        keyOne: 'value',
-        keyTwo: 2,
-        keyThree: ['one', 'two', 'three'],
-      },
-      deeplyNested: {
-        keyOne: {
-          keyTwo: {
-            keyThree: {
-              keyFour: 'value',
-            },
-          },
-        },
-      },
-      array: [1, 2, 3],
-    };
     const overrides = {
       object: {},
       deeplyNested: {
@@ -285,26 +186,6 @@ describe('deepObjectOverride', () => {
   });
 
   it('should replace the original value with an empty array if the override value is an empty array', () => {
-    const original = {
-      string: 'string',
-      number: 1,
-      boolean: true,
-      object: {
-        keyOne: 'value',
-        keyTwo: 2,
-        keyThree: ['one', 'two', 'three'],
-      },
-      deeplyNested: {
-        keyOne: {
-          keyTwo: {
-            keyThree: {
-              keyFour: 'value',
-            },
-          },
-        },
-      },
-      array: [1, 2, 3],
-    };
     const overrides = {
       object: {
         keyThree: [],
