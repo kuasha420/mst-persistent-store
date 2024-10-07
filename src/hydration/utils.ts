@@ -9,7 +9,7 @@ import {
   tryResolve,
 } from 'mobx-state-tree';
 import { IValidationResult } from 'mobx-state-tree/dist/internal';
-import isObject from '../utils/is-object';
+import isObjectLike from '../utils/is-object-like';
 import { NearestParent, PathObject, TreeNode, TreeNodeWithValue } from './types';
 
 export const validationErrorsParser = (errors: IValidationResult): PathObject[] =>
@@ -32,7 +32,7 @@ export const removeEmptyItemsRecursively = (obj: any): any => {
     return obj
       .map((item) => removeEmptyItemsRecursively(item))
       .filter((item) => item !== undefined);
-  } else if (isObject(obj)) {
+  } else if (isObjectLike(obj)) {
     const newObj: any = {};
     for (const key in obj) {
       newObj[key] = removeEmptyItemsRecursively(obj[key]);
