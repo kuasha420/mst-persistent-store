@@ -182,3 +182,12 @@ export const createDefaultValue = (type: IAnyType): any => {
   }
   return defaultValue;
 };
+
+export const checkSetForPrefix = (haystack: Set<string>, prefix: string): boolean => {
+  for (const item of haystack) {
+    if (item.startsWith(prefix)) {
+      return true;
+    }
+  }
+  return false;
+};

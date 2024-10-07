@@ -11,6 +11,7 @@ import {
 } from 'mobx-state-tree';
 import {
   buildTree,
+  checkSetForPrefix,
   createDefaultValue,
   removeEmptyItemsRecursively,
   reverseDepthFirstTraversal,
@@ -50,11 +51,7 @@ const hydrateStore = <T extends IAnyModelType>(
       reverseDepthFirstTraversal(tree, (error) => {
         // If the exact path or its child path is already processed,
         // We should try to revalidate the path to see if the issue is fixed.
-        if (
-          Array.from(processedPaths).some((processedPath) =>
-            processedPath.startsWith(error.value.path)
-          )
-        ) {
+        if (checkSetForPrefix(processedPaths, error.value.path)) {
           const valueAtPath = get(error.value.path, newSnapshot);
           const revalidationErrors = error.value.type.validate(valueAtPath, [
             { path: '', type: error.value.type },
