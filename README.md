@@ -232,7 +232,7 @@ All Properties are optional.
 | writeDelay | `number`                       | 1500                         | On Repeated Store Update, it's advisable to wait<br>a certain time before updating the persistent <br>storage with new snapshot. This value controls the<br>debounce delay. |
 | logging    | `boolean`                      | true is dev<br>false in prod | Whether to enable logging.                                                                                                                                                  |
 | devtool    | `boolean`                      | true in dev<br>false in prod | Whether to integrate with mobx-devtool                                                                                                                                      |
-| onHydrate  | `(store: Instance<T>) => void` |                              | callback function after the store is hydrated                                                                                                                               |
+| onHydrate  | `(store: Instance<T>) => void` | none                         | Callback to run after hydration is done.                                                                                                                                    |
 
 ## Notes
 
