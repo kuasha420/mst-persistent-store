@@ -1,4 +1,4 @@
-import { applySnapshot, IAnyModelType, Instance, onSnapshot, SnapshotIn } from 'mobx-state-tree';
+import { IAnyModelType, Instance, onSnapshot, SnapshotIn } from 'mobx-state-tree';
 import React, { createContext, PropsWithChildren, useContext } from 'react';
 import useAsyncEffect from 'use-async-effect';
 import { debounce } from './utils/debounce';
@@ -6,6 +6,7 @@ import createLogger from './utils/create-logger';
 import recursiveObjectSpread from './utils/recursive-object-spread';
 import { PartialDeep } from './types/partial-deep';
 import isObject from './utils/is-object';
+import hydrateStore from './hydration/hydrate-store';
 
 export interface StorageOptions {
   setItem: (key: string, value: any) => Promise<void> | void;
@@ -109,11 +110,20 @@ const createPersistentStore = <T extends IAnyModelType>(
         if (data && isMounted()) {
           try {
             logger('Hydrating Store from Storage');
-            applySnapshot(mstStore, recursiveObjectSpread(data, disallowList));
-            logger('Successfully hydrated store from storage');
+            const fullHydration = hydrateStore(
+              store,
+              mstStore,
+              recursiveObjectSpread(data, disallowList)
+            );
+            if (fullHydration) {
+              logger('Successfully hydrated store from storage');
+            } else {
+              logger('WARNING! Partial hydration. Some data was not hydrated.');
+            }
           } catch (error) {
+            logger('Failed to fully or partially hydrate store. Throwing away data from storage.');
+            logger('Check the error for more details.');
             console.error(error);
-            logger('Failed to hydrate store. Throwing away data from storage.');
             await storage.removeItem(storageKey);
           }
         }

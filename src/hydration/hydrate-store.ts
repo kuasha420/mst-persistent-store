@@ -25,15 +25,21 @@ const hydrateStore = <T extends IAnyModelType>(
 ) => {
   try {
     applySnapshot(store, snapshot);
+    return true;
   } catch (error) {
     if (error instanceof Error && error.message.startsWith('[mobx-state-tree]')) {
-      const storeSnapshot = getSnapshot<SnapshotIn<T>>(store);
-
       const validationErrors = model.validate(snapshot, [{ path: '', type: model }]);
 
       const errors = validationErrorsParser(validationErrors);
 
+      if (errors.length === 0) {
+        // If there are no validation errors, the error is not recoverable.
+        throw error;
+      }
+
       const tree = buildTree(errors);
+
+      const storeSnapshot = getSnapshot<SnapshotIn<T>>(store);
 
       const newSnapshot: SnapshotIn<T> = JSON.parse(JSON.stringify(snapshot));
 
@@ -125,6 +131,10 @@ const hydrateStore = <T extends IAnyModelType>(
       const finalSnapshot = removeEmptyItemsRecursively(newSnapshot);
 
       applySnapshot(store, finalSnapshot);
+
+      return false;
+    } else {
+      throw error;
     }
   }
 };
