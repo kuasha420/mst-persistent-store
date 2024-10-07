@@ -17,7 +17,7 @@ const profileModel = types.model('TestProfileModel', {
 
 const favoritesModel = types.model('TestFavoritesModel', {
   slug: types.string,
-  postname: types.string,
+  postName: types.string,
 });
 
 const todoNodel = types.model('TestTodoModel', {
@@ -30,9 +30,9 @@ const testStoreModel = types.model('TestStore', {
   // MST primitive types
   name: types.string,
   age: types.number,
-  score: types.integer,
+  level: types.integer,
   weight: types.float,
-  balabnce: types.finite,
+  balance: types.finite,
   premium: types.boolean,
   birthDate: types.Date,
   // MST null and undefined types
@@ -53,19 +53,19 @@ const testStoreModel = types.model('TestStore', {
 
 type TestStoreModel = typeof testStoreModel;
 
-const JohnBirthDate = new Date(1990, 1, 1);
-const JohnBirthDateMilliseconds = JohnBirthDate.getTime();
-const JaneBirthDate = new Date(1995, 1, 1);
-const JaneBirthDateMilliseconds = JaneBirthDate.getTime();
+const initialTestDate = new Date(1990, 1, 1);
+const initialTestDateMS = initialTestDate.getTime();
+const snapshotTestDate = new Date(1995, 1, 1);
+const snapshotTestDateMS = snapshotTestDate.getTime();
 
 const testInitialState: SnapshotIn<TestStoreModel> = {
   name: 'John Doe',
   age: 30,
-  score: 100,
+  level: 100,
   weight: 70.5,
-  balabnce: 1000.0,
+  balance: 1000.0,
   premium: true,
-  birthDate: JohnBirthDateMilliseconds,
+  birthDate: initialTestDateMS,
   testNull: null,
   title: 'Some title',
   description: 'Some description',
@@ -78,11 +78,11 @@ const testInitialState: SnapshotIn<TestStoreModel> = {
 const testSnapshot: SnapshotIn<TestStoreModel> = {
   name: 'Jane Darlene',
   age: 25,
-  score: 120,
+  level: 120,
   weight: 65.5,
-  balabnce: 2000.0,
+  balance: 2000.0,
   premium: false,
-  birthDate: JaneBirthDateMilliseconds,
+  birthDate: snapshotTestDateMS,
   testNull: null,
   title: 'Some other title',
   description: 'Some other description',
@@ -115,8 +115,8 @@ const testSnapshot: SnapshotIn<TestStoreModel> = {
   },
   features: ['One', 'Two', 'Three'],
   favorites: [
-    { slug: 'first', postname: 'First post' },
-    { slug: 'second', postname: 'Second post' },
+    { slug: 'first', postName: 'First post' },
+    { slug: 'second', postName: 'Second post' },
   ],
   todos: {
     1: { id: 1, text: 'First todo', done: false },
@@ -124,40 +124,23 @@ const testSnapshot: SnapshotIn<TestStoreModel> = {
   },
 };
 
-const snapshotModifier = (
+const simpleSnapshotModifier = (
   snapshot: SnapshotIn<TestStoreModel>,
-  keys?: keyof SnapshotIn<TestStoreModel> | Array<keyof SnapshotIn<TestStoreModel>>,
-  values?: any | Array<any>
+  key?: keyof SnapshotIn<TestStoreModel>,
+  value?: any
 ) => {
   const updatedSnapshot = structuredClone(snapshot);
 
-  if (!keys) {
+  if (!key) {
     return updatedSnapshot;
   }
 
-  if (values === undefined) {
-    if (Array.isArray(keys)) {
-      keys.forEach((key) => {
-        delete updatedSnapshot[key];
-      });
-
-      return updatedSnapshot;
-    }
-
-    delete updatedSnapshot[keys];
+  if (value === undefined) {
+    delete updatedSnapshot[key];
     return updatedSnapshot;
   }
 
-  if (Array.isArray(keys)) {
-    if (!Array.isArray(values)) {
-      throw new Error('Values should be an array when keys is an array');
-    }
-
-    const spread = keys.reduce((acc, key, index) => ({ ...acc, [key]: values[index] }), {});
-
-    return { ...updatedSnapshot, ...spread };
-  }
-  return { ...updatedSnapshot, [keys]: values };
+  return { ...updatedSnapshot, [key]: value };
 };
 
 describe('hydrate store', () => {
@@ -169,22 +152,31 @@ describe('hydrate store', () => {
 
   describe('should hydrate store', () => {
     it('when data is correct', () => {
-      const snapshot = snapshotModifier(testSnapshot);
+      const snapshot = simpleSnapshotModifier(testSnapshot);
 
       hydrateStore(testStoreModel, store, snapshot);
 
       expect(store.name).toBe(snapshot.name);
       expect(store.age).toBe(snapshot.age);
-      expect(store.score).toBe(snapshot.score);
+      expect(store.level).toBe(snapshot.level);
       expect(store.weight).toBe(snapshot.weight);
-      expect(store.balabnce).toBe(snapshot.balabnce);
+      expect(store.balance).toBe(snapshot.balance);
       expect(store.premium).toBe(snapshot.premium);
-      expect(store.birthDate).toStrictEqual(JaneBirthDate);
-      expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+      expect(store.birthDate).toStrictEqual(snapshotTestDate);
+      expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
       expect(store.testNull).toBeNull();
       expect(store.testUndefined).toBeUndefined();
       expect(store.title).toBe(snapshot.title);
       expect(store.description).toBe(snapshot.description);
+      expect(store.address).not.toBeNull();
+      expect(snapshot.address?.street).toBe(snapshot.address?.street);
+      expect(snapshot.address?.city).toBe(snapshot.address?.city);
+      expect(snapshot.address?.state).toBe(snapshot.address?.state);
+      expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+      expect(snapshot.address?.country).toBe(snapshot.address?.country);
+      expect(store.additionalAddresses).not.toBeNull();
+      expect(store.additionalAddresses).toHaveLength(2);
+      expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
       expect(store.profile.firstName).toBe(snapshot.profile.firstName);
       expect(store.profile.lastName).toBe(snapshot.profile.lastName);
       expect(store.features).toStrictEqual(snapshot.features);
@@ -197,22 +189,31 @@ describe('hydrate store', () => {
     describe('for MST primitive types', () => {
       describe('when a required field is missing or `undefined`', () => {
         it('for a string', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'name');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'name');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(testInitialState.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -220,22 +221,31 @@ describe('hydrate store', () => {
         });
 
         it('for a number', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'age');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'age');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(testInitialState.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -243,22 +253,31 @@ describe('hydrate store', () => {
         });
 
         it('for an integer', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'score');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'level');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(testInitialState.score);
+          expect(store.level).toBe(testInitialState.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -266,22 +285,31 @@ describe('hydrate store', () => {
         });
 
         it('for a float', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'weight');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'weight');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(testInitialState.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -289,22 +317,31 @@ describe('hydrate store', () => {
         });
 
         it('for a finite', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'balabnce');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'balance');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(testInitialState.balabnce);
+          expect(store.balance).toBe(testInitialState.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -312,22 +349,31 @@ describe('hydrate store', () => {
         });
 
         it('for a boolean', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'premium');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'premium');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(testInitialState.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -335,22 +381,31 @@ describe('hydrate store', () => {
         });
 
         it('for a Date', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'birthDate');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'birthDate');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JohnBirthDate);
-          expect(store.birthDate.getTime()).toBe(JohnBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(initialTestDate);
+          expect(store.birthDate.getTime()).toBe(initialTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -358,22 +413,31 @@ describe('hydrate store', () => {
         });
 
         it('for a null', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'testNull');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'testNull');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -381,22 +445,31 @@ describe('hydrate store', () => {
         });
 
         it('for an undefined', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'testUndefined');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'testUndefined');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -408,27 +481,36 @@ describe('hydrate store', () => {
         it.for([
           ['number', 123],
           ['boolean', true],
-          ['Date', JaneBirthDate],
+          ['Date', snapshotTestDate],
           ['null', null],
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a string', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'name', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'name', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(testInitialState.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -438,27 +520,36 @@ describe('hydrate store', () => {
         it.for([
           ['string', 'Invalid'],
           ['boolean', true],
-          ['Date', JaneBirthDate],
+          ['Date', snapshotTestDate],
           ['null', null],
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a number', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'age', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'age', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(testInitialState.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -469,27 +560,36 @@ describe('hydrate store', () => {
           ['string', 'Invalid'],
           ['float', 123.45],
           ['boolean', true],
-          ['Date', JaneBirthDate],
+          ['Date', snapshotTestDate],
           ['null', null],
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for an integer', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'score', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'level', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(testInitialState.score);
+          expect(store.level).toBe(testInitialState.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -500,27 +600,36 @@ describe('hydrate store', () => {
           ['string', 'Invalid'],
           ['integer', 123],
           ['boolean', true],
-          ['Date', JaneBirthDate],
+          ['Date', snapshotTestDate],
           ['null', null],
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a float', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'weight', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'weight', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(testInitialState.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -533,27 +642,36 @@ describe('hydrate store', () => {
           ['NaN', NaN],
           ['negative infinity', -Infinity],
           ['boolean', true],
-          ['Date', JaneBirthDate],
+          ['Date', snapshotTestDate],
           ['null', null],
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a finite', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'balabnce', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'balance', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(testInitialState.balabnce);
+          expect(store.balance).toBe(testInitialState.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -563,27 +681,36 @@ describe('hydrate store', () => {
         it.for([
           ['string', 'Invalid'],
           ['number', 123],
-          ['Date', JaneBirthDate],
+          ['Date', snapshotTestDate],
           ['null', null],
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a boolean', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'premium', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'premium', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(testInitialState.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -597,22 +724,31 @@ describe('hydrate store', () => {
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a Date', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'birthDate', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'birthDate', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JohnBirthDate);
-          expect(store.birthDate.getTime()).toBe(JohnBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(initialTestDate);
+          expect(store.birthDate.getTime()).toBe(initialTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -623,26 +759,35 @@ describe('hydrate store', () => {
           ['string', 'Invalid'],
           ['number', 123],
           ['boolean', true],
-          ['Date', JaneBirthDate],
+          ['Date', snapshotTestDate],
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a null', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'testNull', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'testNull', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -653,27 +798,36 @@ describe('hydrate store', () => {
           ['string', 'Invalid'],
           ['number', 123],
           ['boolean', true],
-          ['Date', JaneBirthDate],
+          ['Date', snapshotTestDate],
           ['null', null],
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for an undefined', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'testUndefined', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'testUndefined', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -687,22 +841,31 @@ describe('hydrate store', () => {
     describe('for MST nullable types', () => {
       describe('when the field is missing or `undefined`', () => {
         it('for a maybeNull primitive type', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'title');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'title');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBeNull();
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -710,41 +873,58 @@ describe('hydrate store', () => {
         });
 
         it('for a maybe primitive type', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'description');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'description');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBeUndefined();
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
+          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
+          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
+          expect(store.features).toStrictEqual(snapshot.features);
+          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
         });
 
         it('for a maybeNull complex type', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'address');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'address');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).toBeNull();
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -752,22 +932,29 @@ describe('hydrate store', () => {
         });
 
         it('for a maybe complex type', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'additionalAddresses');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'additionalAddresses');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).toBeUndefined();
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -779,27 +966,36 @@ describe('hydrate store', () => {
         it.for([
           ['number', 123],
           ['boolean', true],
-          ['Date', JaneBirthDate],
+          ['Date', snapshotTestDate],
           ['null', null],
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a maybeNull primitive type', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'title', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'title', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBeNull();
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -809,54 +1005,36 @@ describe('hydrate store', () => {
         it.for([
           ['number', 123],
           ['boolean', true],
-          ['Date', JaneBirthDate],
+          ['Date', snapshotTestDate],
           ['null', null],
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a maybe primitive type', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'description', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'description', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBeUndefined();
-        });
-
-        it.for([
-          ['string', 'Invalid'],
-          ['number', 123],
-          ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
-          ['array', ['a', 'b', 'c']],
-          ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a maybeNull complex type', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'address', value);
-
-          hydrateStore(testStoreModel, store, snapshot);
-
-          expect(store.name).toBe(snapshot.name);
-          expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
-          expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
-          expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
-          expect(store.testNull).toBeNull();
-          expect(store.testUndefined).toBeUndefined();
-          expect(store.title).toBe(snapshot.title);
-          expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -867,27 +1045,68 @@ describe('hydrate store', () => {
           ['string', 'Invalid'],
           ['number', 123],
           ['boolean', true],
-          ['Date', JaneBirthDate],
-          ['null', null],
+          ['Date', snapshotTestDate],
+          ['undefined', undefined],
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
-        ])('(%s) for a maybe complex type', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'additionalAddresses', value);
+        ])('(%s) for a maybeNull complex type', ([, value]) => {
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'address', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).toBeNull();
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
+          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
+          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
+          expect(store.features).toStrictEqual(snapshot.features);
+          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+        });
+
+        it.for([
+          ['string', 'Invalid'],
+          ['number', 123],
+          ['boolean', true],
+          ['Date', snapshotTestDate],
+          ['null', null],
+          ['object', { a: 1, b: 2, c: 3 }],
+        ])('(%s) for a maybe complex type', ([, value]) => {
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'additionalAddresses', value);
+
+          hydrateStore(testStoreModel, store, snapshot);
+
+          expect(store.name).toBe(snapshot.name);
+          expect(store.age).toBe(snapshot.age);
+          expect(store.level).toBe(snapshot.level);
+          expect(store.weight).toBe(snapshot.weight);
+          expect(store.balance).toBe(snapshot.balance);
+          expect(store.premium).toBe(snapshot.premium);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
+          expect(store.testNull).toBeNull();
+          expect(store.testUndefined).toBeUndefined();
+          expect(store.title).toBe(snapshot.title);
+          expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).toBeUndefined();
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -900,91 +1119,131 @@ describe('hydrate store', () => {
     describe('for MST complex types', () => {
       describe('when the field is missing or `undefined`', () => {
         it('for a model', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'profile');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'profile');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(testInitialState.profile.firstName);
+          expect(store.profile.lastName).toBe(testInitialState.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
         });
 
         it('for an array of primitives', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'features');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'features');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
+          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual([]);
           expect(store.favorites).toStrictEqual(snapshot.favorites);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
         });
 
         it('for an array of models', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'favorites');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'favorites');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
+          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.favorites).toStrictEqual([]);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
         });
 
         it('for a map', () => {
-          const snapshot = snapshotModifier(testSnapshot, 'todos');
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'todos');
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
+          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.favorites).toStrictEqual(snapshot.favorites);
           expect(store.todos.toJSON()).toStrictEqual({});
@@ -996,28 +1255,38 @@ describe('hydrate store', () => {
           ['string', 'Invalid'],
           ['number', 123],
           ['boolean', true],
-          ['Date', JaneBirthDate],
+          ['Date', snapshotTestDate],
           ['null', null],
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a model', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'profile', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'profile', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(testInitialState.profile.firstName);
+          expect(store.profile.lastName).toBe(testInitialState.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
         });
@@ -1026,27 +1295,37 @@ describe('hydrate store', () => {
           ['string', 'Invalid'],
           ['number', 123],
           ['boolean', true],
-          ['Date', JaneBirthDate],
+          ['Date', snapshotTestDate],
           ['null', null],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for an array of primitives', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'features', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'features', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
+          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual([]);
           expect(store.favorites).toStrictEqual(snapshot.favorites);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
@@ -1056,28 +1335,38 @@ describe('hydrate store', () => {
           ['string', 'Invalid'],
           ['number', 123],
           ['boolean', true],
-          ['Date', JaneBirthDate],
+          ['Date', snapshotTestDate],
           ['null', null],
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for an array of models', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'favorites', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'favorites', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
+          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.favorites).toStrictEqual([]);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
@@ -1087,28 +1376,38 @@ describe('hydrate store', () => {
           ['string', 'Invalid'],
           ['number', 123],
           ['boolean', true],
-          ['Date', JaneBirthDate],
+          ['Date', snapshotTestDate],
           ['null', null],
           ['array', ['a', 'b', 'c']],
           ['object', { a: 1, b: 2, c: 3 }],
         ])('(%s) for a map', ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'todos', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'todos', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
+          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.favorites).toStrictEqual(snapshot.favorites);
           expect(store.todos.toJSON()).toStrictEqual({});
@@ -1144,23 +1443,26 @@ describe('hydrate store', () => {
       ])(
         'for incorrect data (%s) inside a model which is an optional field without initial value',
         ([, value]) => {
-          const snapshot = snapshotModifier(testSnapshot, 'address', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'address', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
           expect(store.address).toBe(null);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -1199,23 +1501,26 @@ describe('hydrate store', () => {
 
           expect(store.address).toStrictEqual(testSnapshot.address);
 
-          const snapshot = snapshotModifier(testSnapshot, 'address', value);
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'address', value);
 
           hydrateStore(testStoreModel, store, snapshot);
 
           expect(store.name).toBe(snapshot.name);
           expect(store.age).toBe(snapshot.age);
-          expect(store.score).toBe(snapshot.score);
+          expect(store.level).toBe(snapshot.level);
           expect(store.weight).toBe(snapshot.weight);
-          expect(store.balabnce).toBe(snapshot.balabnce);
+          expect(store.balance).toBe(snapshot.balance);
           expect(store.premium).toBe(snapshot.premium);
-          expect(store.birthDate).toStrictEqual(JaneBirthDate);
-          expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
           expect(store.testNull).toBeNull();
           expect(store.testUndefined).toBeUndefined();
           expect(store.title).toBe(snapshot.title);
           expect(store.description).toBe(snapshot.description);
           expect(store.address).toBe(null);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
           expect(store.profile.firstName).toBe(snapshot.profile.firstName);
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
@@ -1254,7 +1559,7 @@ describe('hydrate store', () => {
           ],
         ],
       ])('for incorrect data (%s) inside a model which is inside an array', ([, value]) => {
-        const snapshot = snapshotModifier(testSnapshot, 'additionalAddresses', [
+        const snapshot = simpleSnapshotModifier(testSnapshot, 'additionalAddresses', [
           {
             street: '456 Elm St',
             city: 'Anytown',
@@ -1276,12 +1581,12 @@ describe('hydrate store', () => {
 
         expect(store.name).toBe(snapshot.name);
         expect(store.age).toBe(snapshot.age);
-        expect(store.score).toBe(snapshot.score);
+        expect(store.level).toBe(snapshot.level);
         expect(store.weight).toBe(snapshot.weight);
-        expect(store.balabnce).toBe(snapshot.balabnce);
+        expect(store.balance).toBe(snapshot.balance);
         expect(store.premium).toBe(snapshot.premium);
-        expect(store.birthDate).toStrictEqual(JaneBirthDate);
-        expect(store.birthDate.getTime()).toBe(JaneBirthDateMilliseconds);
+        expect(store.birthDate).toStrictEqual(snapshotTestDate);
+        expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
         expect(store.testNull).toBeNull();
         expect(store.testUndefined).toBeUndefined();
         expect(store.title).toBe(snapshot.title);
@@ -1307,6 +1612,228 @@ describe('hydrate store', () => {
         expect(store.profile.lastName).toBe(snapshot.profile.lastName);
         expect(store.features).toStrictEqual(snapshot.features);
         expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+      });
+
+      it.for([
+        [
+          'missing id field',
+          {
+            text: 'Second',
+            done: false,
+          },
+        ],
+        [
+          'incorrect id type',
+          {
+            id: '2',
+            text: 'Second',
+            done: false,
+          },
+        ],
+        [
+          'missing text field',
+          {
+            id: 2,
+            done: false,
+          },
+        ],
+        [
+          'incorrect text field',
+          {
+            id: 2,
+            text: 123,
+            done: false,
+          },
+        ],
+        [
+          'missing done field',
+          {
+            id: 2,
+            text: 'Second',
+          },
+        ],
+        [
+          'incorrect done field',
+          {
+            id: 2,
+            text: 'Second',
+            done: 'false',
+          },
+        ],
+      ])('for incorrect data (%s) inside a model which is inside a map', ([, value]) => {
+        const snapshot = simpleSnapshotModifier(testSnapshot, 'todos', {
+          1: {
+            id: 1,
+            text: 'First',
+            done: false,
+          },
+          2: value,
+          3: {
+            id: 3,
+            text: 'Second',
+            done: true,
+          },
+        });
+
+        hydrateStore(testStoreModel, store, snapshot);
+
+        expect(store.name).toBe(snapshot.name);
+        expect(store.age).toBe(snapshot.age);
+        expect(store.level).toBe(snapshot.level);
+        expect(store.weight).toBe(snapshot.weight);
+        expect(store.balance).toBe(snapshot.balance);
+        expect(store.premium).toBe(snapshot.premium);
+        expect(store.birthDate).toStrictEqual(snapshotTestDate);
+        expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
+        expect(store.testNull).toBeNull();
+        expect(store.testUndefined).toBeUndefined();
+        expect(store.title).toBe(snapshot.title);
+        expect(store.description).toBe(snapshot.description);
+        expect(store.address).toStrictEqual(snapshot.address);
+        expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
+        expect(store.profile.firstName).toBe(snapshot.profile.firstName);
+        expect(store.profile.lastName).toBe(snapshot.profile.lastName);
+        expect(store.features).toStrictEqual(snapshot.features);
+        expect(store.favorites).toStrictEqual(snapshot.favorites);
+        expect(store.todos.toJSON()).toStrictEqual({
+          1: {
+            id: 1,
+            text: 'First',
+            done: false,
+          },
+          3: {
+            id: 3,
+            text: 'Second',
+            done: true,
+          },
+        });
+      });
+
+      it('for some incorrect data inside an array', () => {
+        const snapshot = simpleSnapshotModifier(testSnapshot, 'features', [
+          'First',
+          'Second',
+          123,
+          'Third',
+          'Fourth',
+          true,
+          { a: 1, b: 2, c: 3 },
+          ['a', 'b', 'c'],
+        ]);
+
+        hydrateStore(testStoreModel, store, snapshot);
+
+        expect(store.name).toBe(snapshot.name);
+        expect(store.age).toBe(snapshot.age);
+        expect(store.level).toBe(snapshot.level);
+        expect(store.weight).toBe(snapshot.weight);
+        expect(store.balance).toBe(snapshot.balance);
+        expect(store.premium).toBe(snapshot.premium);
+        expect(store.birthDate).toStrictEqual(snapshotTestDate);
+        expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
+        expect(store.testNull).toBeNull();
+        expect(store.testUndefined).toBeUndefined();
+        expect(store.title).toBe(snapshot.title);
+        expect(store.description).toBe(snapshot.description);
+        expect(store.address).toStrictEqual(snapshot.address);
+        expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
+        expect(store.profile.firstName).toBe(snapshot.profile.firstName);
+        expect(store.profile.lastName).toBe(snapshot.profile.lastName);
+        expect(store.features).toStrictEqual(['First', 'Second', 'Third', 'Fourth']);
+        expect(store.favorites).toStrictEqual(snapshot.favorites);
+        expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+      });
+
+      it('for various incorrect data in the snapshot', () => {
+        const snapshot = {
+          name: 'Jane Darlene',
+          age: 25,
+          level: 120,
+          weight: 65.5,
+          balance: 2000.0,
+          birthDate: snapshotTestDateMS,
+          testNull: null,
+          testUndefined: null,
+          title: 'Some other title',
+          description: 'Some other description',
+          address: {
+            street: '123 Main St',
+            city: 'Anytown',
+            state: 'NY',
+            zip: 12345,
+          },
+          additionalAddresses: [
+            {
+              street: '456 Elm St',
+              city: 'Anytown',
+              state: 'NY',
+              zip: '12345',
+              country: 'USA',
+            },
+            {
+              street: '1234 Pine St',
+              city: 'New York',
+              state: 'NY',
+              zip: 12345,
+              country: 'USA',
+            },
+            {
+              street: '789 Oak St',
+              state: 'NY',
+              zip: 12345,
+              country: 'USA',
+            },
+          ],
+          profiles: {
+            firstName: 'Jane',
+            lastName: 'Darlene',
+          },
+          features: ['One', 'Two', 4, 'Three'],
+          favorites: [
+            { slug: 'first', postName: 'First post' },
+            { slug: 'second' },
+            { slug: 'third', postName: 'Third post', author: 'Jane Darlene' },
+          ],
+          todos: {
+            1: { id: 1, text: 'First todo', done: false },
+            2: { id: 2, text: 'Second todo', done: 'true' },
+          },
+        };
+
+        hydrateStore(testStoreModel, store, snapshot);
+
+        expect(store.name).toBe(snapshot.name);
+        expect(store.age).toBe(snapshot.age);
+        expect(store.level).toBe(snapshot.level);
+        expect(store.weight).toBe(snapshot.weight);
+        expect(store.balance).toBe(snapshot.balance);
+        expect(store.premium).toBe(testInitialState.premium);
+        expect(store.birthDate).toStrictEqual(snapshotTestDate);
+        expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
+        expect(store.testNull).toBeNull();
+        expect(store.testUndefined).toBeUndefined();
+        expect(store.title).toBe(snapshot.title);
+        expect(store.description).toBe(snapshot.description);
+        expect(store.address).toBeNull();
+        expect(store.additionalAddresses).toStrictEqual([
+          {
+            street: '1234 Pine St',
+            city: 'New York',
+            state: 'NY',
+            zip: 12345,
+            country: 'USA',
+          },
+        ]);
+        expect(store.profile.firstName).toBe(testInitialState.profile.firstName);
+        expect(store.profile.lastName).toBe(testInitialState.profile.lastName);
+        expect(store.features).toStrictEqual(['One', 'Two', 'Three']);
+        expect(store.favorites).toStrictEqual([
+          { slug: 'first', postName: 'First post' },
+          { slug: 'third', postName: 'Third post' },
+        ]);
+        expect(store.todos.toJSON()).toStrictEqual({
+          1: { id: 1, text: 'First todo', done: false },
+        });
       });
     });
   });

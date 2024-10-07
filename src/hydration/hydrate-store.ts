@@ -114,7 +114,7 @@ const reverseDepthFirstTraversal = (
   }
 };
 
-function findParent(node: TreeNode, tree: TreeNode): TreeNode | undefined {
+const findParent = (node: TreeNode, tree: TreeNode): TreeNode | undefined => {
   const queue: TreeNode[] = [tree];
   const visited = new Set<TreeNode>(); // Keep track of visited nodes
 
@@ -135,9 +135,12 @@ function findParent(node: TreeNode, tree: TreeNode): TreeNode | undefined {
     }
   }
   return undefined;
-}
+};
 
-function findNearestParentWithValue(node: TreeNodeWithValue, tree: TreeNode): NearestParent | null {
+const findNearestParentWithValue = (
+  node: TreeNodeWithValue,
+  tree: TreeNode
+): NearestParent | null => {
   if (node === tree) {
     return null;
   }
@@ -166,7 +169,7 @@ function findNearestParentWithValue(node: TreeNodeWithValue, tree: TreeNode): Ne
   }
 
   return null;
-}
+};
 
 const tryResolveNearestExistingParent = (
   store: Instance<IAnyModelType>,
