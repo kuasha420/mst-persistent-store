@@ -1,20 +1,21 @@
 import {
-  Instance,
-  IAnyModelType,
-  tryResolve,
-  getType,
-  IAnyType,
-  isStateTreeNode,
+  escapeJsonPath,
   getSnapshot,
+  getType,
+  IAnyModelType,
+  IAnyType,
+  Instance,
+  isStateTreeNode,
+  tryResolve,
 } from 'mobx-state-tree';
 import { IValidationResult } from 'mobx-state-tree/dist/internal';
-import { PathObject, TreeNode, TreeNodeWithValue, NearestParent } from './types';
 import isObject from '../utils/is-object';
+import { NearestParent, PathObject, TreeNode, TreeNodeWithValue } from './types';
 
 export const validationErrorsParser = (errors: IValidationResult): PathObject[] =>
   errors.map((error) => {
     const type = error.context[error.context.length - 1].type;
-    const pathSegments = error.context.map(({ path }) => path);
+    const pathSegments = error.context.map(({ path }) => escapeJsonPath(path));
     const path = pathSegments.join('/');
     const isNested = pathSegments.length > 2;
 
