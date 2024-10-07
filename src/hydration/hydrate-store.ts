@@ -103,10 +103,6 @@ const hydrateStore = <T extends IAnyModelType>(
                 processedPaths.add(nearestParent.nearestParentPath);
               }
               processedPaths.add(nearestParent.childPath);
-            } else {
-              // If the nearest parent is not found, remove the child path from the snapshot.
-              // It should be an optional type.
-              remove(error.value.path, newSnapshot);
             }
           }
         } else {
