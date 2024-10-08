@@ -1,10 +1,12 @@
-import { applySnapshot, IAnyModelType, Instance, onSnapshot, SnapshotIn } from 'mobx-state-tree';
+import { IAnyModelType, Instance, onSnapshot, SnapshotIn } from 'mobx-state-tree';
 import React, { createContext, PropsWithChildren, useContext } from 'react';
 import useAsyncEffect from 'use-async-effect';
-import { debounce } from './utils/debounce';
-import createLogger from './utils/create-logger';
-import recursiveObjectSpread from './utils/recursive-object-spread';
+import hydrateStore from './hydration/hydrate-store';
 import { PartialDeep } from './types/partial-deep';
+import createLogger from './utils/create-logger';
+import { debounce } from './utils/debounce';
+import deepObjectOverride from './utils/deep-object-override';
+import isObjectLike from './utils/is-object-like';
 
 export interface StorageOptions {
   setItem: (key: string, value: any) => Promise<void> | void;
@@ -43,7 +45,7 @@ export interface PersistentStoreOptions<T extends IAnyModelType = IAnyModelType>
 }
 
 const isDev =
-  typeof process === 'object' && process.env && process.env.NODE_ENV === 'development'
+  typeof isObjectLike(process) && process.env && process.env.NODE_ENV === 'development'
     ? true
     : false;
 
@@ -93,7 +95,7 @@ const createPersistentStore = <T extends IAnyModelType>(
   const { storageKey, writeDelay, devtool, logging, onHydrate } = options
     ? { ...defaultOptions, ...options }
     : defaultOptions;
-  const initStore = disallowList ? recursiveObjectSpread(init, disallowList) : init;
+  const initStore = disallowList ? deepObjectOverride(init, disallowList) : init;
 
   const logger = createLogger(logging);
 
@@ -110,11 +112,20 @@ const createPersistentStore = <T extends IAnyModelType>(
         if (data && isMounted()) {
           try {
             logger('Hydrating Store from Storage');
-            applySnapshot(mstStore, recursiveObjectSpread(data, disallowList));
-            logger('Successfully hydrated store from storage');
+            const fullHydration = hydrateStore(
+              store,
+              mstStore,
+              deepObjectOverride(data, disallowList)
+            );
+            if (fullHydration) {
+              logger('Successfully hydrated store from storage');
+            } else {
+              logger('WARNING! Partial hydration. Some data was not hydrated.');
+            }
           } catch (error) {
+            logger('Failed to fully or partially hydrate store. Throwing away data from storage.');
+            logger('Check the error for more details.');
             console.error(error);
-            logger('Failed to hydrate store. Throwing away data from storage.');
             await storage.removeItem(storageKey);
           }
         }

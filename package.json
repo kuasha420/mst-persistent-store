@@ -35,7 +35,8 @@
     }
   },
   "scripts": {
-    "prepare": "rm -rf ./dist/* && tsc"
+    "test": "vitest",
+    "prepare": "rm -rf ./dist/* && tsc -p tsconfig.build.json"
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "7.21.11",
@@ -56,9 +57,11 @@
     "mobx-state-tree": "5.4.0",
     "prettier": "3.1.0",
     "react": "18.2.0",
-    "typescript": "5.3.2"
+    "typescript": "5.3.2",
+    "vitest": "2.1.1"
   },
   "dependencies": {
+    "@hyperjump/json-pointer": "1.1.0",
     "mobx-devtools-mst": "0.9.30",
     "use-async-effect": "2.2.7"
   }
