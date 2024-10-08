@@ -49,6 +49,8 @@ const testStoreModel = types.model('TestStore', {
   features: types.array(types.string),
   favorites: types.array(favoritesModel),
   todos: types.map(todoNodel),
+  // MST Utility types
+  team: types.union(types.literal('A'), types.literal('B')),
 });
 
 type TestStoreModel = typeof testStoreModel;
@@ -73,6 +75,7 @@ const testInitialState: SnapshotIn<TestStoreModel> = {
     firstName: 'John',
     lastName: 'Doe',
   },
+  team: 'A',
 };
 
 const testSnapshot: SnapshotIn<TestStoreModel> = {
@@ -122,6 +125,7 @@ const testSnapshot: SnapshotIn<TestStoreModel> = {
     1: { id: 1, text: 'First todo', done: false },
     2: { id: 2, text: 'Second todo', done: true },
   },
+  team: 'B',
 };
 
 const simpleSnapshotModifier = (
@@ -181,6 +185,7 @@ describe('hydrate store', () => {
       expect(store.profile.lastName).toBe(snapshot.profile.lastName);
       expect(store.features).toStrictEqual(snapshot.features);
       expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+      expect(store.team).toBe(snapshot.team);
     });
   });
 
@@ -218,6 +223,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it('for a number', () => {
@@ -250,6 +256,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it('for an integer', () => {
@@ -282,6 +289,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it('for a float', () => {
@@ -314,6 +322,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it('for a finite', () => {
@@ -346,6 +355,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it('for a boolean', () => {
@@ -378,6 +388,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it('for a Date', () => {
@@ -410,6 +421,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it('for a null', () => {
@@ -442,6 +454,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it('for an undefined', () => {
@@ -474,6 +487,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
       });
 
@@ -515,6 +529,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it.for([
@@ -554,6 +569,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it.for([
@@ -594,6 +610,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it.for([
@@ -634,6 +651,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it.for([
@@ -676,6 +694,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it.for([
@@ -715,6 +734,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it.for([
@@ -753,6 +773,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it.for([
@@ -792,6 +813,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it.for([
@@ -832,6 +854,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
       });
     });
@@ -870,6 +893,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it('for a maybe primitive type', () => {
@@ -902,6 +926,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it('for a maybeNull complex type', () => {
@@ -929,6 +954,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it('for a maybe complex type', () => {
@@ -959,6 +985,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
       });
 
@@ -1000,6 +1027,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it.for([
@@ -1039,6 +1067,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it.for([
@@ -1074,6 +1103,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it.for([
@@ -1111,6 +1141,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
       });
     });
@@ -1148,6 +1179,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(testInitialState.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it('for an array of primitives', () => {
@@ -1181,6 +1213,7 @@ describe('hydrate store', () => {
           expect(store.features).toStrictEqual([]);
           expect(store.favorites).toStrictEqual(snapshot.favorites);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it('for an array of models', () => {
@@ -1214,6 +1247,7 @@ describe('hydrate store', () => {
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.favorites).toStrictEqual([]);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it('for a map', () => {
@@ -1247,6 +1281,7 @@ describe('hydrate store', () => {
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.favorites).toStrictEqual(snapshot.favorites);
           expect(store.todos.toJSON()).toStrictEqual({});
+          expect(store.team).toBe(snapshot.team);
         });
       });
 
@@ -1289,6 +1324,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(testInitialState.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it.for([
@@ -1329,6 +1365,7 @@ describe('hydrate store', () => {
           expect(store.features).toStrictEqual([]);
           expect(store.favorites).toStrictEqual(snapshot.favorites);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it.for([
@@ -1370,6 +1407,7 @@ describe('hydrate store', () => {
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.favorites).toStrictEqual([]);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         });
 
         it.for([
@@ -1411,6 +1449,90 @@ describe('hydrate store', () => {
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.favorites).toStrictEqual(snapshot.favorites);
           expect(store.todos.toJSON()).toStrictEqual({});
+          expect(store.team).toBe(snapshot.team);
+        });
+      });
+    });
+
+    // @link https://mobx-state-tree.js.org/overview/types#utility-types
+    describe('for MST Utility types', () => {
+      describe('when the field is missing or `undefined`', () => {
+        it('for an union of literal type', () => {
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'team');
+
+          hydrateStore(testStoreModel, store, snapshot);
+
+          expect(store.name).toBe(snapshot.name);
+          expect(store.age).toBe(snapshot.age);
+          expect(store.level).toBe(snapshot.level);
+          expect(store.weight).toBe(snapshot.weight);
+          expect(store.balance).toBe(snapshot.balance);
+          expect(store.premium).toBe(snapshot.premium);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
+          expect(store.testNull).toBeNull();
+          expect(store.testUndefined).toBeUndefined();
+          expect(store.title).toBe(snapshot.title);
+          expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
+          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
+          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
+          expect(store.features).toStrictEqual(snapshot.features);
+          expect(store.favorites).toStrictEqual(snapshot.favorites);
+          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(testInitialState.team);
+        });
+      });
+
+      describe('when the field is of wrong type', () => {
+        it.for([
+          ['incorrect string', 'E'],
+          ['number', 123],
+          ['boolean', true],
+          ['Date', snapshotTestDate],
+          ['null', null],
+          ['array', ['a', 'b', 'c']],
+          ['object', { a: 1, b: 2, c: 3 }],
+        ])('(%s) for an union of literal type', ([, value]) => {
+          const snapshot = simpleSnapshotModifier(testSnapshot, 'team', value);
+
+          hydrateStore(testStoreModel, store, snapshot);
+
+          expect(store.name).toBe(snapshot.name);
+          expect(store.age).toBe(snapshot.age);
+          expect(store.level).toBe(snapshot.level);
+          expect(store.weight).toBe(snapshot.weight);
+          expect(store.balance).toBe(snapshot.balance);
+          expect(store.premium).toBe(snapshot.premium);
+          expect(store.birthDate).toStrictEqual(snapshotTestDate);
+          expect(store.birthDate.getTime()).toBe(snapshotTestDateMS);
+          expect(store.testNull).toBeNull();
+          expect(store.testUndefined).toBeUndefined();
+          expect(store.title).toBe(snapshot.title);
+          expect(store.description).toBe(snapshot.description);
+          expect(store.address).not.toBeNull();
+          expect(snapshot.address?.street).toBe(snapshot.address?.street);
+          expect(snapshot.address?.city).toBe(snapshot.address?.city);
+          expect(snapshot.address?.state).toBe(snapshot.address?.state);
+          expect(snapshot.address?.zip).toBe(snapshot.address?.zip);
+          expect(snapshot.address?.country).toBe(snapshot.address?.country);
+          expect(store.additionalAddresses).not.toBeNull();
+          expect(store.additionalAddresses).toHaveLength(2);
+          expect(store.additionalAddresses).toStrictEqual(snapshot.additionalAddresses);
+          expect(store.profile.firstName).toBe(snapshot.profile.firstName);
+          expect(store.profile.lastName).toBe(snapshot.profile.lastName);
+          expect(store.features).toStrictEqual(snapshot.features);
+          expect(store.favorites).toStrictEqual(snapshot.favorites);
+          expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(testInitialState.team);
         });
       });
     });
@@ -1467,6 +1589,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         }
       );
 
@@ -1525,6 +1648,7 @@ describe('hydrate store', () => {
           expect(store.profile.lastName).toBe(snapshot.profile.lastName);
           expect(store.features).toStrictEqual(snapshot.features);
           expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+          expect(store.team).toBe(snapshot.team);
         }
       );
 
@@ -1612,6 +1736,7 @@ describe('hydrate store', () => {
         expect(store.profile.lastName).toBe(snapshot.profile.lastName);
         expect(store.features).toStrictEqual(snapshot.features);
         expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+        expect(store.team).toBe(snapshot.team);
       });
 
       it.for([
@@ -1707,6 +1832,7 @@ describe('hydrate store', () => {
             done: true,
           },
         });
+        expect(store.team).toBe(snapshot.team);
       });
 
       it('for some incorrect data inside an array', () => {
@@ -1742,6 +1868,7 @@ describe('hydrate store', () => {
         expect(store.features).toStrictEqual(['First', 'Second', 'Third', 'Fourth']);
         expect(store.favorites).toStrictEqual(snapshot.favorites);
         expect(store.todos.toJSON()).toStrictEqual(snapshot.todos);
+        expect(store.team).toBe(snapshot.team);
       });
 
       it('for various incorrect data in the snapshot', () => {
@@ -1798,6 +1925,7 @@ describe('hydrate store', () => {
             1: { id: 1, text: 'First todo', done: false },
             2: { id: 2, text: 'Second todo', done: 'true' },
           },
+          team: 'B',
         };
 
         hydrateStore(testStoreModel, store, snapshot);
@@ -1834,6 +1962,7 @@ describe('hydrate store', () => {
         expect(store.todos.toJSON()).toStrictEqual({
           1: { id: 1, text: 'First todo', done: false },
         });
+        expect(store.team).toBe(snapshot.team);
       });
     });
   });
