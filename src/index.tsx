@@ -6,7 +6,7 @@ import { PartialDeep } from './types/partial-deep';
 import createLogger from './utils/create-logger';
 import { debounce } from './utils/debounce';
 import deepObjectOverride from './utils/deep-object-override';
-import isObjectLike from './utils/is-object-like';
+import isDev from './utils/is-dev';
 
 export interface StorageOptions {
   setItem: (key: string, value: any) => Promise<void> | void;
@@ -44,16 +44,13 @@ export interface PersistentStoreOptions<T extends IAnyModelType = IAnyModelType>
   onHydrate?: (store: Instance<T>) => void;
 }
 
-const isDev =
-  typeof isObjectLike(process) && process.env && process.env.NODE_ENV === 'development'
-    ? true
-    : false;
+const isDevelopmentMode = isDev();
 
 const defaultOptions: PersistentStoreOptions = {
   storageKey: 'persistentStore',
   writeDelay: 1500,
-  logging: isDev,
-  devtool: isDev,
+  logging: isDevelopmentMode,
+  devtool: isDevelopmentMode,
 };
 
 const createPersistentStore = <T extends IAnyModelType>(
