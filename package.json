@@ -35,8 +35,10 @@
     }
   },
   "scripts": {
+    "lint": "eslint . --ext .ts,.tsx",
+    "prepare": "rm -rf ./dist/* && tsc -p tsconfig.build.json",
     "test": "vitest",
-    "prepare": "rm -rf ./dist/* && tsc -p tsconfig.build.json"
+    "type-check": "tsc"
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "7.21.11",
