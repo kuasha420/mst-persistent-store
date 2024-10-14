@@ -46,6 +46,10 @@ Below is an example on how to create the provider and consumer hook.
 // store-setup.ts
 import { types } from 'mobx-state-tree';
 import createPersistentStore from 'mst-persistent-store';
+// The default storage is async-storage for React Native and localforage for Web
+// This needs to be explicitly imported for the default storage to work correctly
+// for the respective platform. If you are using a custom storage,
+// you don't need to import this
 import defaultStorage from 'mst-persistent-store/dist/storage';
 
 const PersistentStore = types
@@ -53,11 +57,10 @@ const PersistentStore = types
     name: types.string,
     age: types.number,
     premium: types.boolean,
-    hydrated: types.boolean,
   })
   .actions((self) => ({
-    hydrate() {
-      self.hydrated = true;
+    grantPremium() {
+      self.premium = true;
     },
   }))
   .views((self) => ({
@@ -73,14 +76,6 @@ export const [PersistentStoreProvider, usePersistentStore] = createPersistentSto
     name: 'Test User',
     age: 19,
     premium: false,
-    hydrated: false,
-  },
-  {
-    hydrated: false,
-  },
-  {
-    logging: false,
-    devtool: false,
   }
 );
 ```
@@ -114,20 +109,12 @@ import { useEffect } from 'react';
 import { usePersistentStore } from './store-setup';
 
 const Main = observer(() => {
-  const { name, age, isAdult, hydrated, hydrate } = usePersistentStore();
-
-  useEffect(() => {
-    hydrate();
-  }, []);
-
-  if (!hydrated) {
-    return <p>Loading...</p>;
-  }
+  const store = usePersistentStore();
 
   return (
     <div>
       <p>
-        {name} is {age} years old and {isAdult ? 'is' : 'is not'} an adult.
+        {store.name} is {store.age} years old and {store.isAdult ? 'is' : 'is not'} an adult.
       </p>
     </div>
   );
@@ -172,13 +159,6 @@ export const [PersistentStoreProvider, usePersistentStore] = createPersistentSto
     name: 'Test User',
     age: 19,
     premium: false,
-    hydrated: false,
-  },
-  {
-    hydrated: false,
-  },
-  {
-    hydrated: false,
   }
 );
 ```
