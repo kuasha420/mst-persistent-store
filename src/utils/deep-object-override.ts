@@ -1,7 +1,7 @@
 import { PartialDeep } from '../types/partial-deep';
 import isObjectLike from './is-object-like';
 
-export default function deepObjectOverride<T extends Record<string, any>>(
+export default function deepObjectOverride<T extends Record<string, unknown>>(
   original: T,
   overrides?: PartialDeep<T>
 ): T {
@@ -22,7 +22,7 @@ export default function deepObjectOverride<T extends Record<string, any>>(
         if (Object.keys(overrideValue).length === 0) {
           result[key] = overrideValue as T[keyof T];
         } else {
-          result[key] = deepObjectOverride(originalValue, overrideValue);
+          result[key] = deepObjectOverride(originalValue, overrideValue as PartialDeep<T[keyof T] & Record<string, unknown>>);
         }
       } else {
         result[key] = overrideValue as T[keyof T];

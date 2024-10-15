@@ -131,7 +131,7 @@ const testSnapshot: SnapshotIn<TestStoreModel> = {
 const simpleSnapshotModifier = (
   snapshot: SnapshotIn<TestStoreModel>,
   key?: keyof SnapshotIn<TestStoreModel>,
-  value?: any
+  value?: unknown
 ) => {
   const updatedSnapshot = structuredClone(snapshot);
 

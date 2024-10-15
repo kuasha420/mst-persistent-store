@@ -7,7 +7,7 @@ const isDev = () => {
     } else {
       return false;
     }
-  } catch (e) {
+  } catch {
     return false;
   }
 };

@@ -1,7 +1,7 @@
 /**
  * A function that emits a side effect and does not return anything.
  */
-export type Procedure = (...args: any[]) => void;
+export type Procedure = (...args: unknown[]) => void;
 
 export type Options = {
   isImmediate: boolean;
