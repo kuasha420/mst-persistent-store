@@ -9,8 +9,8 @@ import deepObjectOverride from './utils/deep-object-override';
 import isDev from './utils/is-dev';
 
 export interface StorageOptions {
-  setItem: (key: string, value: any) => Promise<void> | void;
-  getItem: (key: string) => Promise<any | null> | any | null;
+  setItem: (key: string, value: unknown) => Promise<void> | void;
+  getItem: (key: string) => Promise<unknown | null> | unknown | null;
   removeItem: (key: string) => Promise<void> | void;
 }
 
@@ -63,7 +63,7 @@ const createPersistentStore = <T extends IAnyModelType>(
    * pass it here. The default storage uses `@react-native-async-storage/async-storage` for react-native and `localforage`
    * for web.
    *
-   * You can use any storage provider that mplements the same API. ie. `setItem`, `getItem`, `removeItem`.
+   * You can use unknown storage provider that mplements the same API. ie. `setItem`, `getItem`, `removeItem`.
    *
    * Note that both `setItem` and `getItem` must handle the serialization and deserialization of data as done by
    * localforage. ie. `setItem` must stringify the data before storing and `getItem` must parse the data before returning.
@@ -100,11 +100,11 @@ const createPersistentStore = <T extends IAnyModelType>(
   const PersistentStoreContext = createContext<Instance<T> | null>(null);
   const mstStore: Instance<T> = store.create(initStore);
 
-  const PersistentStoreProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
+  const PersistentStoreProvider: React.FC<PropsWithChildren<object>> = ({ children }) => {
     // Effects will only run on client side.
     useAsyncEffect(
       async (isMounted) => {
-        const data = await storage.getItem(storageKey);
+        const data = await storage.getItem(storageKey) as SnapshotIn<T>;
 
         if (data && isMounted()) {
           try {

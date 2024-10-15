@@ -20,5 +20,5 @@
     "target": "ES2017",
     "noEmit": true,
   },
-  "exclude": ["node_modules", "dist", "jest.config.js"]
+  "exclude": ["node_modules", "dist", "eslint.config.js", "jest.config.js"]
 }

@@ -8,7 +8,7 @@ import {
   isStateTreeNode,
   tryResolve,
 } from 'mobx-state-tree';
-import { IValidationResult } from 'mobx-state-tree/dist/internal';
+import { IValidationResult, SnapshotOut } from 'mobx-state-tree/dist/internal';
 import isObjectLike from '../utils/is-object-like';
 import { NearestParent, PathObject, TreeNode, TreeNodeWithValue } from './types';
 
@@ -27,13 +27,13 @@ export const validationErrorsParser = (errors: IValidationResult): PathObject[] 
     };
   });
 
-export const removeEmptyItemsRecursively = (obj: any): any => {
+export const removeEmptyItemsRecursively = (obj: unknown): unknown => {
   if (Array.isArray(obj)) {
     return obj
       .map((item) => removeEmptyItemsRecursively(item))
       .filter((item) => item !== undefined);
   } else if (isObjectLike(obj)) {
-    const newObj: any = {};
+    const newObj: Record<string, unknown> = {};
     for (const key in obj) {
       newObj[key] = removeEmptyItemsRecursively(obj[key]);
     }
@@ -176,7 +176,7 @@ export const tryResolveNearestExistingParent = (
   return null;
 };
 
-export const createDefaultValue = (type: IAnyType): any => {
+export const createDefaultValue = <T extends IAnyType>(type: T): SnapshotOut<T> => {
   const defaultValue = type.create();
   if (isStateTreeNode(defaultValue)) {
     return getSnapshot(defaultValue);

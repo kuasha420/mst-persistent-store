@@ -3,5 +3,5 @@
     "compilerOptions": {
         "noEmit": false
     },
-    "exclude": ["node_modules", "dist", "jest.config.js", "**/*.test.ts", "**/*.test.tsx"],
+    "exclude": ["node_modules", "dist", "eslint.config.js", "jest.config.js", "**/*.test.ts", "**/*.test.tsx"],
 }
