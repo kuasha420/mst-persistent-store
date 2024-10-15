@@ -2,6 +2,7 @@
   "name": "mst-persistent-store",
   "version": "3.1.1",
   "description": "Mobx State Tree Persistant Store Provider Component and Consumer Hook writen in TypeScript",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -35,31 +36,26 @@
     }
   },
   "scripts": {
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "eslint",
     "prepare": "rm -rf ./dist/* && tsc -p tsconfig.build.json",
     "test": "vitest",
     "type-check": "tsc"
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "7.21.11",
+    "@eslint/js": "^9.11.1",
     "@react-native-async-storage/async-storage": "2.0.0",
     "@types/node": "22.7.5",
     "@types/react": "18.3.11",
-    "@typescript-eslint/eslint-plugin": "6.13.2",
-    "@typescript-eslint/parser": "6.13.2",
-    "eslint": "8.55.0",
-    "eslint-config-react-app": "7.0.1",
-    "eslint-plugin-flowtype": "8.0.3",
-    "eslint-plugin-import": "2.29.0",
-    "eslint-plugin-jsx-a11y": "6.8.0",
-    "eslint-plugin-react": "7.33.2",
-    "eslint-plugin-react-hooks": "4.6.0",
+    "eslint": "^9.11.1",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "localforage": "1.10.0",
     "mobx": "6.13.3",
     "mobx-state-tree": "6.0.1",
     "prettier": "3.3.3",
     "react": "18.3.1",
     "typescript": "5.6.3",
+    "typescript-eslint": "^8.7.0",
     "vitest": "2.1.3"
   },
   "dependencies": {
