@@ -75,6 +75,12 @@
       "types": "./dist/typescript/index.d.ts",
       "default": "./dist/module/index.js"
     },
+    "./storage": {
+      "source": "./src/storage/index.ts",
+      "types": "./dist/typescript/storage/index.d.ts",
+      "default": "./dist/module/storage/index.js"
+    },
+    "./dist/storage": "./storage",
     "./package.json": "./package.json"
   },
   "react-native-builder-bob": {
