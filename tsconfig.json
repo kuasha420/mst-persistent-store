@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "lib": ["es6", "dom", "esnext.asynciterable"],
+    "lib": [
+      "es6",
+      "dom",
+      "esnext.asynciterable"
+    ],
     "sourceMap": true,
     "allowJs": true,
     "jsx": "react",
@@ -13,12 +17,16 @@
     "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true,
     "skipLibCheck": true,
-    "declaration": true,
-    "declarationMap": true,
-    "outDir": "dist",
+    "declaration": false,
+    "declarationMap": false,
     "module": "es2020",
     "target": "ES2017",
     "noEmit": true,
   },
-  "exclude": ["node_modules", "dist", "eslint.config.js", "jest.config.js"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "eslint.config.js",
+    "jest.config.js"
+  ]
 }

@@ -1,7 +1,17 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
-        "noEmit": false
+        "noEmit": false,
+        "declaration": true,
+        "emitDeclarationOnly": true,
+        "declarationMap": true,
     },
-    "exclude": ["node_modules", "dist", "eslint.config.js", "jest.config.js", "**/*.test.ts", "**/*.test.tsx"],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "eslint.config.js",
+        "jest.config.js",
+        "**/*.test.ts",
+        "**/*.test.tsx"
+    ],
 }
