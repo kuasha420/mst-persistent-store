@@ -50,7 +50,7 @@ import createPersistentStore from 'mst-persistent-store';
 // This needs to be explicitly imported for the default storage to work correctly
 // for the respective platform. If you are using a custom storage,
 // you don't need to import this
-import defaultStorage from 'mst-persistent-store/dist/storage';
+import defaultStorage from 'mst-persistent-store/storage';
 
 const PersistentStore = types
   .model('RootStore', {
@@ -194,13 +194,13 @@ const createPersistentStore: <T extends IAnyModelType>(
 
 #### Arguments
 
-| param        | type                              | required | description                                                                                                                                                                                                     |
-| ------------ | --------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| store        | `T extends IAnyModelType`         | yes      | the mst model to instantiate                                                                                                                                                                                    |
-| storage      | `StorageOptions`                  | yes      | the storage to use. Use `defaultStorage` from `mst-persistent-store/dist//storage` to use the `@react-native-async-storage/async-storage` (for React Native) or `localforage` (for Web) backed default storage. |
-| init         | `SnapshotIn<T>`                   | yes      | the init data of the store                                                                                                                                                                                      |
-| disallowList | `PartialDeep<SnapshotIn<T>>`      | no       | the part of the store that should not be persisted. See notes below                                                                                                                                             |
-| options      | `Partial<PersistentStoreOptions>` | no       | Various options to change store behavior                                                                                                                                                                        |
+| param        | type                              | required | description                                                                                                                                                                                               |
+| ------------ | --------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| store        | `T extends IAnyModelType`         | yes      | the mst model to instantiate                                                                                                                                                                              |
+| storage      | `StorageOptions`                  | yes      | the storage to use. Use `defaultStorage` from `mst-persistent-store/storage` to use the `@react-native-async-storage/async-storage` (for React Native) or `localforage` (for Web) backed default storage. |
+| init         | `SnapshotIn<T>`                   | yes      | the init data of the store                                                                                                                                                                                |
+| disallowList | `PartialDeep<SnapshotIn<T>>`      | no       | the part of the store that should not be persisted. See notes below                                                                                                                                       |
+| options      | `Partial<PersistentStoreOptions>` | no       | Various options to change store behavior                                                                                                                                                                  |
 
 #### PersistentStoreOptions
 
